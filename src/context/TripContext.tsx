@@ -106,8 +106,10 @@ export function TripProvider({ children }: { children: ReactNode }) {
         setSynced(true)
         return
       }
+      if (saveTimer.current) clearTimeout(saveTimer.current)
       skipSave.current = true
       setState(next)
+      stateRef.current = next
       localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
       setSynced(true)
       queueMicrotask(() => {
@@ -157,14 +159,18 @@ export function TripProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
 
     if (saveTimer.current) clearTimeout(saveTimer.current)
+    const snapshot = state
     saveTimer.current = setTimeout(async () => {
+      if (skipSave.current) return
+      // Avoid writing a stale empty snapshot over newer remote data
+      if (JSON.stringify(snapshot) !== JSON.stringify(stateRef.current)) return
       try {
-        await saveTripState(state)
+        await saveTripState(stateRef.current)
         setSynced(true)
       } catch {
         setSynced(false)
       }
-    }, 500)
+    }, 600)
 
     return () => {
       if (saveTimer.current) clearTimeout(saveTimer.current)
