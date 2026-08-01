@@ -27,25 +27,25 @@ interface SidebarProps {
 
 export function Sidebar({ open, onClose }: SidebarProps) {
   const content = (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--sidebar-border)]">
-        <div className="flex items-center gap-3">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
-          <div>
+    <div className="flex h-full flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--sidebar-border)]">
+        <div className="flex items-center gap-3 min-w-0">
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-10 w-10 rounded-xl object-cover shadow-sm shrink-0" />
+          <div className="min-w-0">
             <p className="font-display font-bold text-lg leading-none tracking-tight">3bro</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">Travel Planner</p>
           </div>
         </div>
         <button
           onClick={onClose}
-          className="lg:hidden p-2 rounded-xl hover:bg-accent cursor-pointer"
+          className="lg:hidden h-11 w-11 flex items-center justify-center rounded-xl hover:bg-accent cursor-pointer touch-manipulation shrink-0"
           aria-label="Close sidebar"
         >
           <X className="h-5 w-5" />
         </button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -54,7 +54,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             onClick={onClose}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-2xl px-3.5 py-2.5 text-sm font-medium transition-all duration-200',
+                'flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-sm font-medium transition-all duration-200 touch-manipulation min-h-12',
                 isActive
                   ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
                   : 'text-muted-foreground hover:bg-[var(--sidebar-accent)] hover:text-foreground'

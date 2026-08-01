@@ -46,14 +46,20 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-md px-4 lg:px-6">
-        <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick} aria-label="Open menu">
-          <Menu className="h-5 w-5" />
+      <header className="sticky top-0 z-20 flex min-h-16 items-center gap-2 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-4 lg:px-6 pt-[env(safe-area-inset-top,0px)]">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="lg:hidden h-12 w-12 shrink-0 touch-manipulation"
+          onClick={onMenuClick}
+          aria-label="Open menu"
+        >
+          <Menu className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-center gap-2 lg:hidden">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-8 w-8 rounded-lg object-cover" />
-          <span className="font-display font-bold text-lg">3bro</span>
+        <div className="flex items-center gap-2 lg:hidden min-w-0">
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-8 w-8 rounded-lg object-cover shrink-0" />
+          <span className="font-display font-bold text-lg truncate">3bro</span>
         </div>
 
         <div className="hidden md:block flex-1 max-w-md ml-2">
@@ -62,10 +68,10 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
         <div className="flex-1 md:hidden" />
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5 shrink-0">
           <span
             className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted-foreground"
-            title={synced ? 'Synced with MongoDB' : 'Offline — saving locally'}
+            title={synced ? 'Synced' : 'Offline — saving locally'}
           >
             {loading ? null : synced ? (
               <>
@@ -82,16 +88,28 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden h-12 w-12 touch-manipulation"
             onClick={() => setSearchOpen(true)}
             aria-label="Search"
           >
             <Search className="h-5 w-5" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-12 w-12 touch-manipulation"
+            onClick={toggleTheme}
+            aria-label="Toggle theme"
+          >
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
-          <Button variant="ghost" size="icon" onClick={openSettings} aria-label="Settings">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-12 w-12 touch-manipulation"
+            onClick={openSettings}
+            aria-label="Settings"
+          >
             <Settings className="h-5 w-5" />
           </Button>
         </div>
