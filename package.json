@@ -4,10 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently -n server,web -c red,cyan \"npm run dev --prefix server\" \"vite\"",
+    "dev:web": "vite",
+    "dev:server": "npm run dev --prefix server",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "postinstall": "npm install --prefix server --ignore-scripts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -38,6 +41,7 @@
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.4",
+    "concurrently": "^10.0.4",
     "oxlint": "^1.75.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",

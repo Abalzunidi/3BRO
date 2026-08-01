@@ -4,10 +4,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react'
 import { generateId } from '@/lib/utils'
+import { fetchTripState, saveTripState } from '@/lib/api'
 import type {
   Activity,
   Expense,
@@ -44,6 +46,8 @@ interface TripContextValue {
   expenses: Expense[]
   tasks: Task[]
   gallery: GalleryImage[]
+  loading: boolean
+  synced: boolean
   updateTrip: (info: Partial<TripInfo>) => void
   addScheduleActivity: (activity: Omit<ScheduleActivity, 'id' | 'order'>) => void
   updateScheduleActivity: (id: string, data: Partial<ScheduleActivity>) => void
@@ -66,7 +70,7 @@ interface TripContextValue {
 
 const TripContext = createContext<TripContextValue | null>(null)
 
-function loadState(): TripState {
+function loadLocal(): TripState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState
@@ -77,11 +81,66 @@ function loadState(): TripState {
 }
 
 export function TripProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<TripState>(loadState)
+  const [state, setState] = useState<TripState>(defaultState)
+  const [loading, setLoading] = useState(true)
+  const [synced, setSynced] = useState(false)
+  const skipSave = useRef(true)
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
+    async function init() {
+      try {
+        const remote = await fetchTripState()
+        if (cancelled) return
+        setState({
+          trip: { ...emptyTrip, ...remote.trip },
+          schedule: remote.schedule || [],
+          activities: remote.activities || [],
+          expenses: remote.expenses || [],
+          tasks: remote.tasks || [],
+          gallery: remote.gallery || [],
+        })
+        setSynced(true)
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(remote))
+      } catch {
+        if (cancelled) return
+        setState(loadLocal())
+        setSynced(false)
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+          skipSave.current = false
+        }
+      }
+    }
+
+    init()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (loading || skipSave.current) return
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  }, [state])
+
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(async () => {
+      try {
+        await saveTripState(state)
+        setSynced(true)
+      } catch {
+        setSynced(false)
+      }
+    }, 500)
+
+    return () => {
+      if (saveTimer.current) clearTimeout(saveTimer.current)
+    }
+  }, [state, loading])
 
   const updateTrip = useCallback((info: Partial<TripInfo>) => {
     setState((s) => ({ ...s, trip: { ...s.trip, ...info } }))
@@ -200,16 +259,13 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const progress = useMemo(() => {
     const all = [...state.schedule, ...state.activities]
-    if (all.length === 0) return 0
+    if (all.length === 0 && state.tasks.length === 0) return 0
     const completed = all.filter((a) => a.status === 'completed').length
     const taskDone = state.tasks.filter((t) => t.status === 'completed').length
     const taskTotal = state.tasks.length
-    const activityProgress = all.length ? (completed / all.length) * 70 : 0
-    const taskProgress = taskTotal ? (taskDone / taskTotal) * 30 : 0
-    if (all.length === 0 && taskTotal === 0) return 0
-    if (all.length === 0) return (taskDone / taskTotal) * 100
-    if (taskTotal === 0) return (completed / all.length) * 100
-    return Math.round(activityProgress + taskProgress)
+    if (all.length === 0) return Math.round((taskDone / taskTotal) * 100)
+    if (taskTotal === 0) return Math.round((completed / all.length) * 100)
+    return Math.round((completed / all.length) * 70 + (taskDone / taskTotal) * 30)
   }, [state.schedule, state.activities, state.tasks])
 
   const value: TripContextValue = {
@@ -219,6 +275,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
     expenses: state.expenses,
     tasks: state.tasks,
     gallery: state.gallery,
+    loading,
+    synced,
     updateTrip,
     addScheduleActivity,
     updateScheduleActivity,

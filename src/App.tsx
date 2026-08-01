@@ -15,7 +15,7 @@ export default function App() {
     <ThemeProvider>
       <ToastProvider>
         <TripProvider>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, '') || undefined}>
             <Routes>
               <Route element={<AppLayout />}>
                 <Route path="/" element={<Dashboard />} />

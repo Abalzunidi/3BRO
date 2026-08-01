@@ -30,7 +30,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--sidebar-border)]">
         <div className="flex items-center gap-3">
-          <img src="/logo.png" alt="3bro" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-10 w-10 rounded-xl object-cover shadow-sm" />
           <div>
             <p className="font-display font-bold text-lg leading-none tracking-tight">3bro</p>
             <p className="text-[10px] text-muted-foreground uppercase tracking-widest mt-0.5">Travel Planner</p>

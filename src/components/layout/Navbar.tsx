@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu, Moon, Search, Settings, Sun } from 'lucide-react'
+import { Cloud, CloudOff, Menu, Moon, Search, Settings, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/shared/SearchInput'
 import {
@@ -21,7 +21,7 @@ interface NavbarProps {
 
 export function Navbar({ onMenuClick }: NavbarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { trip, updateTrip } = useTrip()
+  const { trip, updateTrip, synced, loading } = useTrip()
   const { toast } = useToast()
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
@@ -52,7 +52,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         </Button>
 
         <div className="flex items-center gap-2 lg:hidden">
-          <img src="/logo.png" alt="3bro" className="h-8 w-8 rounded-lg object-cover" />
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-8 w-8 rounded-lg object-cover" />
           <span className="font-display font-bold text-lg">3bro</span>
         </div>
 
@@ -63,6 +63,22 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         <div className="flex-1 md:hidden" />
 
         <div className="flex items-center gap-1">
+          <span
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted-foreground"
+            title={synced ? 'Synced with MongoDB' : 'Offline — saving locally'}
+          >
+            {loading ? null : synced ? (
+              <>
+                <Cloud className="h-3.5 w-3.5 text-emerald-500" />
+                Synced
+              </>
+            ) : (
+              <>
+                <CloudOff className="h-3.5 w-3.5 text-amber-500" />
+                Local
+              </>
+            )}
+          </span>
           <Button
             variant="ghost"
             size="icon"
