@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+  --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Outfit", ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --background: #fff5f5;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --primary: #b91c1c;
+  --primary-foreground: #ffffff;
+  --secondary: #dc2626;
+  --secondary-foreground: #ffffff;
+  --accent: #fee2e2;
+  --accent-foreground: #b91c1c;
+  --muted: #fef2f2;
+  --muted-foreground: #737373;
+  --destructive: #ef4444;
+  --border: #fecaca;
+  --input: #fecaca;
+  --ring: #b91c1c;
+  --radius: 16px;
+  --sidebar: #ffffff;
+  --sidebar-foreground: #1a1a1a;
+  --sidebar-accent: #fee2e2;
+  --sidebar-border: #fecaca;
+}
+
+.dark {
+  --background: #0f0a0a;
+  --foreground: #fafafa;
+  --card: #1a1212;
+  --card-foreground: #fafafa;
+  --primary: #ef4444;
+  --primary-foreground: #ffffff;
+  --secondary: #dc2626;
+  --secondary-foreground: #ffffff;
+  --accent: #2a1515;
+  --accent-foreground: #fca5a5;
+  --muted: #1f1515;
+  --muted-foreground: #a3a3a3;
+  --destructive: #f87171;
+  --border: #3f1f1f;
+  --input: #3f1f1f;
+  --ring: #ef4444;
+  --sidebar: #140e0e;
+  --sidebar-foreground: #fafafa;
+  --sidebar-accent: #2a1515;
+  --sidebar-border: #3f1f1f;
+}
+
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--primary);
+}

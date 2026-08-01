@@ -1,0 +1,159 @@
+import { useState } from 'react'
+import { Menu, Moon, Search, Settings, Sun } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { SearchInput } from '@/components/shared/SearchInput'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
+import { Input } from '@/components/ui/input'
+import { useTheme } from '@/context/ThemeContext'
+import { useTrip } from '@/context/TripContext'
+import { useToast } from '@/context/ToastContext'
+
+interface NavbarProps {
+  onMenuClick: () => void
+}
+
+export function Navbar({ onMenuClick }: NavbarProps) {
+  const { theme, toggleTheme } = useTheme()
+  const { trip, updateTrip } = useTrip()
+  const { toast } = useToast()
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [form, setForm] = useState(trip)
+
+  const openSettings = () => {
+    setForm(trip)
+    setSettingsOpen(true)
+  }
+
+  const saveSettings = () => {
+    updateTrip({
+      name: form.name,
+      destination: form.destination,
+      travelDate: form.travelDate,
+      returnDate: form.returnDate,
+      budget: Number(form.budget) || 0,
+    })
+    setSettingsOpen(false)
+    toast('Trip settings saved')
+  }
+
+  return (
+    <>
+      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-card/80 backdrop-blur-md px-4 lg:px-6">
+        <Button variant="ghost" size="icon" className="lg:hidden" onClick={onMenuClick} aria-label="Open menu">
+          <Menu className="h-5 w-5" />
+        </Button>
+
+        <div className="flex items-center gap-2 lg:hidden">
+          <img src="/logo.png" alt="3bro" className="h-8 w-8 rounded-lg object-cover" />
+          <span className="font-display font-bold text-lg">3bro</span>
+        </div>
+
+        <div className="hidden md:block flex-1 max-w-md ml-2">
+          <SearchInput placeholder="Search trips, activities..." readOnly onChange={() => {}} />
+        </div>
+
+        <div className="flex-1 md:hidden" />
+
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={() => setSearchOpen(true)}
+            aria-label="Search"
+          >
+            <Search className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+          </Button>
+          <Button variant="ghost" size="icon" onClick={openSettings} aria-label="Settings">
+            <Settings className="h-5 w-5" />
+          </Button>
+        </div>
+      </header>
+
+      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Search</DialogTitle>
+            <DialogDescription>Search across your trip plans</DialogDescription>
+          </DialogHeader>
+          <SearchInput placeholder="Search..." />
+          <p className="text-xs text-muted-foreground text-center py-4">Search is UI only for now</p>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Trip Settings</DialogTitle>
+            <DialogDescription>Configure your trip details</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label htmlFor="trip-name">Trip Name</Label>
+              <Input
+                id="trip-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="e.g. Summer Adventure"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="destination">Destination</Label>
+              <Input
+                id="destination"
+                value={form.destination}
+                onChange={(e) => setForm({ ...form, destination: e.target.value })}
+                placeholder="e.g. Istanbul, Turkey"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="travel-date">Travel Date</Label>
+                <Input
+                  id="travel-date"
+                  type="date"
+                  value={form.travelDate}
+                  onChange={(e) => setForm({ ...form, travelDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="return-date">Return Date</Label>
+                <Input
+                  id="return-date"
+                  type="date"
+                  value={form.returnDate}
+                  onChange={(e) => setForm({ ...form, returnDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="budget">Total Budget ($)</Label>
+              <Input
+                id="budget"
+                type="number"
+                min={0}
+                value={form.budget || ''}
+                onChange={(e) => setForm({ ...form, budget: Number(e.target.value) })}
+                placeholder="0"
+              />
+            </div>
+            <Button onClick={saveSettings} className="w-full">
+              Save Settings
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  )
+}

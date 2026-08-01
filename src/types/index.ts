@@ -1,0 +1,65 @@
+export type ActivityStatus = 'pending' | 'in-progress' | 'completed' | 'cancelled'
+export type TaskStatus = 'pending' | 'completed'
+
+export interface TripInfo {
+  name: string
+  destination: string
+  travelDate: string
+  returnDate: string
+  budget: number
+}
+
+export interface ScheduleActivity {
+  id: string
+  name: string
+  time: string
+  location: string
+  duration: string
+  cost: number
+  notes: string
+  status: ActivityStatus
+  order: number
+}
+
+export interface Activity {
+  id: string
+  name: string
+  description: string
+  time: string
+  cost: number
+  location: string
+  mapsLink: string
+  image: string
+  status: ActivityStatus
+}
+
+export interface Expense {
+  id: string
+  item: string
+  category: string
+  amount: number
+  date: string
+}
+
+export interface Task {
+  id: string
+  name: string
+  dueDate: string
+  status: TaskStatus
+}
+
+export interface GalleryImage {
+  id: string
+  name: string
+  url: string
+  createdAt: string
+}
+
+export interface TripState {
+  trip: TripInfo
+  schedule: ScheduleActivity[]
+  activities: Activity[]
+  expenses: Expense[]
+  tasks: Task[]
+  gallery: GalleryImage[]
+}
