@@ -86,24 +86,40 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [synced, setSynced] = useState(false)
   const skipSave = useRef(true)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const stateRef = useRef(state)
+  stateRef.current = state
 
   useEffect(() => {
     let cancelled = false
+
+    function applyRemote(remote: TripState) {
+      const next: TripState = {
+        trip: { ...emptyTrip, ...remote.trip },
+        schedule: remote.schedule || [],
+        activities: remote.activities || [],
+        expenses: remote.expenses || [],
+        tasks: remote.tasks || [],
+        gallery: remote.gallery || [],
+      }
+      const same = JSON.stringify(next) === JSON.stringify(stateRef.current)
+      if (same) {
+        setSynced(true)
+        return
+      }
+      skipSave.current = true
+      setState(next)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      setSynced(true)
+      queueMicrotask(() => {
+        skipSave.current = false
+      })
+    }
 
     async function init() {
       try {
         const remote = await fetchTripState()
         if (cancelled) return
-        setState({
-          trip: { ...emptyTrip, ...remote.trip },
-          schedule: remote.schedule || [],
-          activities: remote.activities || [],
-          expenses: remote.expenses || [],
-          tasks: remote.tasks || [],
-          gallery: remote.gallery || [],
-        })
-        setSynced(true)
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remote))
+        applyRemote(remote)
       } catch {
         if (cancelled) return
         setState(loadLocal())
@@ -117,8 +133,21 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }
 
     init()
+
+    const poll = setInterval(async () => {
+      if (document.hidden) return
+      try {
+        const remote = await fetchTripState()
+        if (cancelled) return
+        applyRemote(remote)
+      } catch {
+        setSynced(false)
+      }
+    }, 8000)
+
     return () => {
       cancelled = true
+      clearInterval(poll)
     }
   }, [])
 
