@@ -119,8 +119,8 @@ async function start() {
   try {
     await mongoose.connect(MONGODB_URI, { family: 4 })
     console.log('MongoDB connected')
-    app.listen(PORT, () => {
-      console.log(`3bro API running on http://localhost:${PORT}`)
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`3bro API running on port ${PORT}`)
     })
   } catch (err) {
     console.error('MongoDB connection failed:', err.message)
