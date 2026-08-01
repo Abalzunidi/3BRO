@@ -33,7 +33,8 @@ jobs:
       - run: npm run build
         env:
           GITHUB_PAGES: 'true'
-          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_MANTLE_NS: ${{ vars.VITE_MANTLE_NS }}
+          VITE_MANTLE_KEY: ${{ secrets.VITE_MANTLE_KEY }}
 
       - name: SPA fallback for GitHub Pages
         run: cp dist/index.html dist/404.html

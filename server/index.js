@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 3001
 const MONGODB_URI = process.env.MONGODB_URI
 
 if (!MONGODB_URI) {
-  console.error('Missing MONGODB_URI in server/.env')
-  process.exit(1)
+  console.error('Missing MONGODB_URI')
+  if (!process.env.VERCEL) process.exit(1)
 }
 
 const emptyState = {
@@ -49,11 +49,27 @@ const tripDataSchema = new mongoose.Schema(
   { timestamps: true }
 )
 
-const TripData = mongoose.model('TripData', tripDataSchema)
+const TripData = mongoose.models.TripData || mongoose.model('TripData', tripDataSchema)
 
 const app = express()
 app.use(cors())
 app.use(express.json({ limit: '25mb' }))
+
+async function connectDB() {
+  if (!MONGODB_URI) throw new Error('Missing MONGODB_URI')
+  if (mongoose.connection.readyState === 1) return
+  await mongoose.connect(MONGODB_URI, { family: 4 })
+}
+
+app.use(async (_req, _res, next) => {
+  try {
+    await connectDB()
+    next()
+  } catch (err) {
+    console.error('MongoDB connection failed:', err.message)
+    next(err)
+  }
+})
 
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -115,17 +131,22 @@ app.put('/api/state', async (req, res) => {
   }
 })
 
-async function start() {
-  try {
-    await mongoose.connect(MONGODB_URI, { family: 4 })
-    console.log('MongoDB connected')
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`3bro API running on port ${PORT}`)
+app.use((err, _req, res, _next) => {
+  res.status(500).json({ error: err.message || 'Server error' })
+})
+
+if (!process.env.VERCEL) {
+  connectDB()
+    .then(() => {
+      console.log('MongoDB connected')
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`3bro API running on port ${PORT}`)
+      })
     })
-  } catch (err) {
-    console.error('MongoDB connection failed:', err.message)
-    process.exit(1)
-  }
+    .catch((err) => {
+      console.error('MongoDB connection failed:', err.message)
+      process.exit(1)
+    })
 }
 
-start()
+export default app
