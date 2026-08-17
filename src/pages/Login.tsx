@@ -1,20 +1,40 @@
 import { useState, type FormEvent } from 'react'
-import { LogIn, ShieldCheck } from 'lucide-react'
+import { Delete as DeleteKey, LogIn, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
-import { normalizeUsername } from '@/lib/sections'
+import { normalizePin, normalizeUsername } from '@/lib/sections'
+import { cn } from '@/lib/utils'
+
+type LoginMode = 'username' | 'code'
 
 export function Login() {
   const { needsSetup, login, setupAdmin } = useAuth()
   const { toast } = useToast()
+  const [mode, setMode] = useState<LoginMode>('username')
   const [username, setUsername] = useState('')
+  const [pin, setPin] = useState('')
   const [name, setName] = useState('')
   const [error, setError] = useState('')
 
-  const handleLogin = (e: FormEvent) => {
+  const submitPin = (value: string) => {
+    const code = normalizePin(value)
+    setPin(code)
+    if (code.length < 4) {
+      setError('')
+      return
+    }
+    if (login(code)) {
+      toast('Welcome back')
+      return
+    }
+    setError('Wrong code')
+    setPin('')
+  }
+
+  const handleUsernameLogin = (e: FormEvent) => {
     e.preventDefault()
     const user = username.trim()
     if (!user) {
@@ -30,7 +50,7 @@ export function Login() {
 
   const handleSetup = (e: FormEvent) => {
     e.preventDefault()
-    const msg = setupAdmin(name, username)
+    const msg = setupAdmin(name, username, pin)
     if (msg) {
       setError(msg)
       toast(msg, 'error')
@@ -39,6 +59,8 @@ export function Login() {
     toast('Admin account created')
   }
 
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del']
+
   return (
     <div className="min-h-dvh bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl">
@@ -46,7 +68,7 @@ export function Login() {
           <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-16 w-16 rounded-2xl object-cover shadow-sm" />
           <h1 className="font-display text-2xl font-bold mt-4">3bro</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {needsSetup ? 'Create the admin username first' : 'Enter the username the admin gave you'}
+            {needsSetup ? 'Create the admin login first' : 'Sign in with username or code'}
           </p>
         </div>
 
@@ -68,7 +90,7 @@ export function Login() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-username">Username</Label>
+              <Label htmlFor="admin-username">Username (optional)</Label>
               <Input
                 id="admin-username"
                 value={username}
@@ -78,6 +100,18 @@ export function Login() {
                 dir="auto"
               />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="admin-pin">Code (4 digits, optional)</Label>
+              <Input
+                id="admin-pin"
+                inputMode="numeric"
+                value={pin}
+                onChange={(e) => setPin(normalizePin(e.target.value))}
+                placeholder="••••"
+                className="text-center text-2xl tracking-[0.4em] font-display"
+              />
+            </div>
+            <p className="text-xs text-muted-foreground text-center">Add a username, a code, or both.</p>
             {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
             <Button type="submit" className="w-full" size="lg">
               <ShieldCheck className="h-4 w-4" />
@@ -85,29 +119,95 @@ export function Login() {
             </Button>
           </form>
         ) : (
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="login-username">Username</Label>
-              <Input
-                id="login-username"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value)
+          <>
+            <div className="grid grid-cols-2 gap-2 mb-5">
+              <Button
+                type="button"
+                variant={mode === 'username' ? 'default' : 'outline'}
+                onClick={() => {
+                  setMode('username')
                   setError('')
                 }}
-                placeholder="username"
-                autoComplete="username"
-                autoFocus
-                dir="auto"
-                className="h-12"
-              />
+              >
+                Username
+              </Button>
+              <Button
+                type="button"
+                variant={mode === 'code' ? 'default' : 'outline'}
+                onClick={() => {
+                  setMode('code')
+                  setError('')
+                }}
+              >
+                Code
+              </Button>
             </div>
-            {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
-            <Button type="submit" className="w-full" size="lg">
-              <LogIn className="h-4 w-4" />
-              Enter
-            </Button>
-          </form>
+
+            {mode === 'username' ? (
+              <form onSubmit={handleUsernameLogin} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="login-username">Username</Label>
+                  <Input
+                    id="login-username"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value)
+                      setError('')
+                    }}
+                    placeholder="username"
+                    autoComplete="username"
+                    autoFocus
+                    dir="auto"
+                    className="h-12"
+                  />
+                </div>
+                {error ? <p className="text-sm text-destructive text-center">{error}</p> : null}
+                <Button type="submit" className="w-full" size="lg">
+                  <LogIn className="h-4 w-4" />
+                  Enter
+                </Button>
+              </form>
+            ) : (
+              <>
+                <div className="flex justify-center gap-2 mb-6">
+                  {[0, 1, 2, 3].map((i) => (
+                    <span
+                      key={i}
+                      className={cn(
+                        'h-3.5 w-3.5 rounded-full border',
+                        i < pin.length ? 'bg-primary border-primary' : 'border-border bg-muted'
+                      )}
+                    />
+                  ))}
+                </div>
+                {error ? <p className="text-sm text-destructive text-center mb-3">{error}</p> : null}
+                <div className="grid grid-cols-3 gap-2">
+                  {keys.map((key, i) =>
+                    key === '' ? (
+                      <span key={`empty-${i}`} />
+                    ) : (
+                      <Button
+                        key={key}
+                        type="button"
+                        variant={key === 'del' ? 'outline' : 'secondary'}
+                        className="h-14 text-xl font-display"
+                        onClick={() => {
+                          if (key === 'del') {
+                            setPin((p) => p.slice(0, -1))
+                            setError('')
+                            return
+                          }
+                          submitPin(pin + key)
+                        }}
+                      >
+                        {key === 'del' ? <DeleteKey className="h-5 w-5" /> : key}
+                      </Button>
+                    )
+                  )}
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
     </div>

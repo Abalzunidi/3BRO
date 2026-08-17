@@ -16,13 +16,14 @@ import {
 import { useTrip } from '@/context/TripContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
-import { ALL_SECTION_IDS, APP_SECTIONS, normalizeUsername, randomUnusedPin } from '@/lib/sections'
+import { ALL_SECTION_IDS, APP_SECTIONS, normalizePin, normalizeUsername, randomUnusedPin } from '@/lib/sections'
 import type { AppSection, Member, MemberRole } from '@/types'
 import { motion } from 'framer-motion'
 
 const emptyForm = {
   name: '',
   username: '',
+  pin: '',
   role: 'member' as MemberRole,
   sections: [...ALL_SECTION_IDS] as AppSection[],
   galleryUpload: true,
@@ -38,7 +39,10 @@ export function Admin() {
 
   const openAdd = () => {
     setEditing(null)
-    setForm({ ...emptyForm })
+    setForm({
+      ...emptyForm,
+      pin: randomUnusedPin(members.map((m) => m.pin)),
+    })
     setOpen(true)
   }
 
@@ -47,6 +51,7 @@ export function Admin() {
     setForm({
       name: member.name,
       username: member.username || '',
+      pin: member.pin || '',
       role: member.role,
       sections: [...member.sections],
       galleryUpload: member.galleryUpload !== false,
@@ -67,30 +72,41 @@ export function Admin() {
   }
 
   const handleSave = () => {
-    const username = normalizeUsername(form.username || form.name)
+    const username = normalizeUsername(form.username)
+    const pin = normalizePin(form.pin)
     if (!form.name.trim()) {
       toast('Name is required', 'error')
       return
     }
-    if (username.length < 2) {
-      toast('Username is required', 'error')
+    if (!username && pin.length !== 4) {
+      toast('Add a username or a 4-digit code', 'error')
       return
     }
-    const taken = members.some((m) => {
-      if (m.id === editing?.id) return false
-      return (
-        normalizeUsername(m.username || '') === username ||
-        (!m.username && normalizeUsername(m.name) === username)
-      )
-    })
-    if (taken) {
-      toast('This username is already used', 'error')
+    if (pin && pin.length !== 4) {
+      toast('Code must be 4 digits', 'error')
       return
+    }
+    if (username) {
+      const takenUser = members.some((m) => {
+        if (m.id === editing?.id) return false
+        return normalizeUsername(m.username || '') === username
+      })
+      if (takenUser) {
+        toast('This username is already used', 'error')
+        return
+      }
+    }
+    if (pin.length === 4) {
+      const takenPin = members.some((m) => m.pin === pin && m.id !== editing?.id)
+      if (takenPin) {
+        toast('This code is already used', 'error')
+        return
+      }
     }
     const payload = {
       name: form.name.trim(),
-      username,
-      pin: editing?.pin || randomUnusedPin(members.map((m) => m.pin)),
+      username: username || undefined,
+      pin,
       role: form.role,
       sections: form.role === 'admin' ? [...ALL_SECTION_IDS] : form.sections,
       galleryUpload: form.role === 'admin' ? true : form.sections.includes('gallery') && form.galleryUpload,
@@ -100,7 +116,7 @@ export function Admin() {
       toast('Member updated')
     } else {
       addMember(payload)
-      toast('Member added — give them their username')
+      toast('Member added')
     }
     setOpen(false)
   }
@@ -123,14 +139,14 @@ export function Admin() {
     <div className="space-y-6 pb-20">
       <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Admin</h1>
-        <p className="text-muted-foreground mt-1">Give each person a username and choose which pages they can see</p>
+        <p className="text-muted-foreground mt-1">Give each person a username, a code, or both — then choose which pages they can see</p>
       </motion.div>
 
       {members.length === 0 ? (
         <EmptyState
           icon={Shield}
           title="No members yet"
-          description="Add people and send each one their username."
+          description="Add people and give each one a username, a 4-digit code, or both."
           action={<Button onClick={openAdd}>+ Add member</Button>}
         />
       ) : (
@@ -150,8 +166,18 @@ export function Admin() {
                     {member.role}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Username: <span className="font-medium text-foreground" dir="auto">{member.username || member.name}</span>
+                <p className="text-sm text-muted-foreground mt-1 space-x-2">
+                  {member.username && (
+                    <>
+                      Username: <span className="font-medium text-foreground" dir="auto">{member.username}</span>
+                    </>
+                  )}
+                  {member.username && member.pin?.length === 4 && ' · '}
+                  {member.pin?.length === 4 && (
+                    <>
+                      Code: <span className="font-display font-semibold tracking-widest text-foreground">{member.pin}</span>
+                    </>
+                  )}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {member.role === 'admin'
@@ -183,32 +209,35 @@ export function Admin() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit member' : 'Add member'}</DialogTitle>
-            <DialogDescription>They log in with this username. Uncheck pages they should not see.</DialogDescription>
+            <DialogDescription>They can sign in with username, a 4-digit code, or both. Uncheck pages they should not see.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>Name</Label>
               <Input
                 value={form.name}
-                onChange={(e) => {
-                  const name = e.target.value
-                  setForm((f) => ({
-                    ...f,
-                    name,
-                    username: !f.username || f.username === normalizeUsername(f.name) ? normalizeUsername(name) : f.username,
-                  }))
-                }}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder="Name"
               />
             </div>
             <div className="space-y-2">
-              <Label>Username</Label>
+              <Label>Username (optional)</Label>
               <Input
                 value={form.username}
                 onChange={(e) => setForm({ ...form, username: e.target.value })}
                 placeholder="username"
                 dir="auto"
                 autoComplete="username"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Code (4 digits, optional)</Label>
+              <Input
+                inputMode="numeric"
+                value={form.pin}
+                onChange={(e) => setForm({ ...form, pin: normalizePin(e.target.value) })}
+                placeholder="1234"
+                className="tracking-[0.3em] font-display text-lg"
               />
             </div>
             <div className="space-y-2">
