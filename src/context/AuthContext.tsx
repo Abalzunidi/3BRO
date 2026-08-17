@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTrip } from '@/context/TripContext'
-import { ALL_SECTION_IDS, APP_SECTIONS, canUploadGallery as memberCanUploadGallery, normalizePin } from '@/lib/sections'
+import { ALL_SECTION_IDS, APP_SECTIONS, canUploadGallery as memberCanUploadGallery, memberMatchesLogin, normalizeUsername } from '@/lib/sections'
 import type { AppSection, Member } from '@/types'
 
 const SESSION_KEY = '3bro-session-id'
@@ -9,9 +9,9 @@ interface AuthContextValue {
   member: Member | null
   isAdmin: boolean
   needsSetup: boolean
-  login: (pin: string) => boolean
+  login: (username: string) => boolean
   logout: () => void
-  setupAdmin: (name: string, pin: string) => string | null
+  setupAdmin: (name: string, username: string) => string | null
   canAccess: (section: AppSection | 'admin') => boolean
   canUploadGallery: boolean
   firstPath: string
@@ -43,9 +43,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const login = useCallback(
-    (pin: string) => {
-      const code = normalizePin(pin)
-      const found = members.find((m) => m.pin === code)
+    (username: string) => {
+      const found = members.find((m) => memberMatchesLogin(m, username))
       if (!found) return false
       persistSession(found.id)
       return true
@@ -56,14 +55,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => persistSession(null), [])
 
   const setupAdmin = useCallback(
-    (name: string, pin: string) => {
+    (name: string, username: string) => {
       if (members.length > 0) return 'Admin already exists'
-      const code = normalizePin(pin)
-      if (code.length !== 4) return 'Use a 4-digit number'
       if (!name.trim()) return 'Name is required'
+      const user = normalizeUsername(username || name)
+      if (user.length < 2) return 'Username is required'
       const created = addMember({
         name: name.trim(),
-        pin: code,
+        username: user,
+        pin: '',
         role: 'admin',
         sections: [...ALL_SECTION_IDS],
       })

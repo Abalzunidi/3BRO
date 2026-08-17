@@ -44,6 +44,19 @@ export function normalizePin(value: string) {
   return toWesternDigits(value).replace(/\D/g, '').slice(0, 4)
 }
 
+export function normalizeUsername(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, '')
+}
+
+export function memberMatchesLogin(member: Member, input: string) {
+  const user = normalizeUsername(input)
+  if (!user) return false
+  if (member.username && normalizeUsername(member.username) === user) return true
+  if (normalizeUsername(member.name) === user) return true
+  const pin = normalizePin(input)
+  return pin.length === 4 && member.pin === pin
+}
+
 export function randomUnusedPin(existing: string[]) {
   const used = new Set(existing)
   for (let i = 0; i < 50; i++) {
