@@ -68,9 +68,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <Menu className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-center gap-2 lg:hidden min-w-0">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-8 w-8 rounded-lg object-cover shrink-0" />
-          <span className="font-display font-bold text-lg truncate">3bro</span>
+        <div className="flex items-center lg:hidden min-w-0">
+          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-8 w-8 rounded-lg object-cover shrink-0" />
         </div>
 
         <div className="hidden md:block flex-1 max-w-md ml-2">

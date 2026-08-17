@@ -28,7 +28,7 @@ export function ActivityCard({ activity, onClick, index = 0 }: ActivityCardProps
             <img
               src={activity.image}
               alt={activity.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              className="h-full w-full object-cover"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">

@@ -133,7 +133,7 @@ export function ImageGalleryGrid({ images, memberId, onLike, onDelete, onDownloa
               className="group relative aspect-square rounded-2xl overflow-hidden bg-muted cursor-pointer text-left shadow-sm ring-1 ring-black/5"
               onClick={() => setPage([i, 0])}
             >
-              <img src={image.url} alt={image.caption || 'Photo'} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+              <img src={image.url} alt={image.caption || 'Photo'} className="h-full w-full object-cover" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
               <div className="absolute top-2 left-2">
                 <LikeButton liked={liked} count={count} onClick={() => onLike(image.id)} />

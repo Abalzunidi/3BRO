@@ -13,7 +13,7 @@ export function AuthGate() {
     return (
       <div className="min-h-dvh flex items-center justify-center bg-background">
         <div className="text-center">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-14 w-14 rounded-2xl mx-auto mb-3 object-cover" />
+          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-14 w-14 rounded-2xl mx-auto mb-3 object-cover" />
           <p className="text-sm text-muted-foreground">Loading…</p>
         </div>
       </div>

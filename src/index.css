@@ -80,6 +80,8 @@
 html {
   height: 100%;
   -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  touch-action: manipulation;
 }
 
 body {
@@ -91,6 +93,14 @@ body {
   min-height: -webkit-fill-available;
   -webkit-font-smoothing: antialiased;
   overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+/* iOS zooms the page when focused controls are under 16px */
+input,
+textarea,
+select {
+  font-size: 16px;
 }
 
 #root {

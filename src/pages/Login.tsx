@@ -65,9 +65,8 @@ export function Login() {
     <div className="min-h-dvh bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-3xl border border-border bg-card p-6 shadow-xl">
         <div className="flex flex-col items-center text-center mb-6">
-          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3bro" className="h-16 w-16 rounded-2xl object-cover shadow-sm" />
-          <h1 className="font-display text-2xl font-bold mt-4">3bro</h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <img src={`${import.meta.env.BASE_URL}logo.png`} alt="3 BRO" className="h-20 w-20 rounded-2xl object-contain bg-black shadow-sm" />
+          <p className="text-sm text-muted-foreground mt-4">
             {needsSetup ? 'Create the admin login first' : 'Sign in with username or code'}
           </p>
         </div>
