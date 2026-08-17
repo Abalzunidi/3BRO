@@ -20,7 +20,7 @@ export function ActivityCard({ activity, onClick, index = 0 }: ActivityCardProps
       layout
     >
       <Card
-        className="overflow-hidden cursor-pointer group hover:border-primary/40"
+        className="overflow-hidden cursor-pointer"
         onClick={onClick}
       >
         <div className="aspect-[16/10] bg-muted relative overflow-hidden">

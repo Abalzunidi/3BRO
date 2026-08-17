@@ -11,7 +11,7 @@ export function AppLayout() {
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="lg:pl-64">
         <Navbar onMenuClick={() => setSidebarOpen(true)} />
-        <main className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        <main className="p-4 sm:p-6 lg:p-8 max-w-6xl mx-auto pb-[max(2rem,env(safe-area-inset-bottom))]">
           <Outlet />
         </main>
       </div>

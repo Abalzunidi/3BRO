@@ -1,7 +1,6 @@
 import { useState } from 'react'
-import { Cloud, CloudOff, LogOut, Menu, Moon, RefreshCw, Search, Settings, Sun } from 'lucide-react'
+import { Cloud, CloudOff, LogOut, Menu, Moon, RefreshCw, Settings, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { SearchInput } from '@/components/shared/SearchInput'
 import {
   Dialog,
   DialogContent,
@@ -25,7 +24,6 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const { trip, updateTrip, synced, loading, refresh } = useTrip()
   const { toast } = useToast()
   const { isAdmin, logout } = useAuth()
-  const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [form, setForm] = useState(trip)
@@ -57,7 +55,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-20 flex min-h-16 items-center gap-2 border-b border-border bg-card/95 backdrop-blur-md px-3 sm:px-4 lg:px-6 pt-[env(safe-area-inset-top,0px)]">
+      <header className="sticky top-0 z-20 flex min-h-16 items-center gap-2 border-b border-border bg-background/90 backdrop-blur-md px-3 sm:px-4 lg:px-6 pt-[env(safe-area-inset-top,0px)]">
         <Button
           variant="ghost"
           size="icon"
@@ -68,19 +66,27 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <Menu className="h-6 w-6" />
         </Button>
 
-        <div className="flex items-center lg:hidden min-w-0">
-          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-8 w-8 rounded-lg object-cover shrink-0" />
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <img
+            src={`${import.meta.env.BASE_URL}logo-mark.png`}
+            alt="3 BRO"
+            className="lg:hidden h-9 w-9 rounded-lg object-contain bg-black p-0.5 shrink-0"
+          />
+          <div className="min-w-0">
+            <p className="font-display font-semibold truncate text-[15px] leading-tight">
+              {trip.name || 'Your trip'}
+            </p>
+            {trip.destination ? (
+              <p className="text-xs text-muted-foreground truncate">{trip.destination}</p>
+            ) : (
+              <p className="text-xs text-muted-foreground truncate">Travel planner</p>
+            )}
+          </div>
         </div>
-
-        <div className="hidden md:block flex-1 max-w-md ml-2">
-          <SearchInput placeholder="Search trips, activities..." readOnly onChange={() => {}} />
-        </div>
-
-        <div className="flex-1 md:hidden" />
 
         <div className="flex items-center gap-0.5 shrink-0">
           <span
-            className="hidden sm:inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs text-muted-foreground"
+            className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-card border border-border px-2.5 py-1 text-xs text-muted-foreground"
             title={synced ? 'Synced' : 'Offline — saving locally'}
           >
             {loading ? null : synced ? (
@@ -109,15 +115,6 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden h-12 w-12 touch-manipulation"
-            onClick={() => setSearchOpen(true)}
-            aria-label="Search"
-          >
-            <Search className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
             className="h-12 w-12 touch-manipulation"
             onClick={toggleTheme}
             aria-label="Toggle theme"
@@ -125,15 +122,15 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
           {isAdmin && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-12 w-12 touch-manipulation"
-            onClick={openSettings}
-            aria-label="Settings"
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-12 w-12 touch-manipulation"
+              onClick={openSettings}
+              aria-label="Settings"
+            >
+              <Settings className="h-5 w-5" />
+            </Button>
           )}
           <Button
             variant="ghost"
@@ -146,17 +143,6 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           </Button>
         </div>
       </header>
-
-      <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Search</DialogTitle>
-            <DialogDescription>Search across your trip plans</DialogDescription>
-          </DialogHeader>
-          <SearchInput placeholder="Search..." />
-          <p className="text-xs text-muted-foreground text-center py-4">Search is UI only for now</p>
-        </DialogContent>
-      </Dialog>
 
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent>

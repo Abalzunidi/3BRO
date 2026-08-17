@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import { MapPinned, ExternalLink, Trash2, ImageIcon } from 'lucide-react'
 import { FloatingActionButton } from '@/components/shared/FloatingActionButton'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { ActivityCard } from '@/components/shared/ActivityCard'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { Button } from '@/components/ui/button'
@@ -28,7 +29,6 @@ import { useToast } from '@/context/ToastContext'
 import { fileToCloudDataUrl } from '@/lib/image'
 import { formatCurrency } from '@/lib/utils'
 import type { Activity, ActivityStatus } from '@/types'
-import { motion } from 'framer-motion'
 
 const emptyForm = {
   name: '',
@@ -110,10 +110,7 @@ export function Activities() {
 
   return (
     <div className="space-y-6 pb-20">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Activities</h1>
-        <p className="text-muted-foreground mt-1">Explore and manage your trip activities</p>
-      </motion.div>
+      <PageHeader title="Activities" description="Explore and manage your trip activities" />
 
       {activities.length === 0 ? (
         <EmptyState

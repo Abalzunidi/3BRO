@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Shield, Trash2, UserPlus } from 'lucide-react'
 import { FloatingActionButton } from '@/components/shared/FloatingActionButton'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -137,10 +138,10 @@ export function Admin() {
 
   return (
     <div className="space-y-6 pb-20">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Admin</h1>
-        <p className="text-muted-foreground mt-1">Give each person a username, a code, or both — then choose which pages they can see</p>
-      </motion.div>
+      <PageHeader
+        title="Admin"
+        description="Give each person a username, a code, or both — then choose which pages they can see"
+      />
 
       {members.length === 0 ? (
         <EmptyState

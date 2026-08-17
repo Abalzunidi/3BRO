@@ -35,7 +35,7 @@ export function Calendar({ selected, onSelect, markedDates = [], className }: Ca
   const isMarked = (day: Date) => markedDates.some((d) => isSameDay(d, day))
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-card p-4', className)}>
+    <div className={cn('rounded-3xl border border-border bg-card p-5', className)}>
       <div className="flex items-center justify-between mb-4">
         <Button variant="ghost" size="icon" onClick={() => setCurrent(subMonths(current, 1))}>
           <ChevronLeft className="h-4 w-4" />

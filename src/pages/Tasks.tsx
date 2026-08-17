@@ -3,6 +3,7 @@ import { CheckSquare, Plus } from 'lucide-react'
 import { AnimatePresence } from 'framer-motion'
 import { TaskCard } from '@/components/shared/TaskCard'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { FloatingActionButton } from '@/components/shared/FloatingActionButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -25,7 +26,6 @@ import {
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
 import type { Task, TaskStatus } from '@/types'
-import { motion } from 'framer-motion'
 
 export function Tasks() {
   const { tasks, addTask, updateTask, deleteTask } = useTrip()
@@ -63,20 +63,16 @@ export function Tasks() {
 
   return (
     <div className="space-y-6 pb-20">
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3"
-      >
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Tasks</h1>
-          <p className="text-muted-foreground mt-1">Keep track of your to-dos</p>
-        </div>
-        <Button onClick={openAdd} className="hidden sm:inline-flex self-start">
-          <Plus className="h-4 w-4" />
-          Add Task
-        </Button>
-      </motion.div>
+      <PageHeader
+        title="Tasks"
+        description="Keep track of your to-dos"
+        action={
+          <Button onClick={openAdd} className="hidden sm:inline-flex self-start">
+            <Plus className="h-4 w-4" />
+            Add Task
+          </Button>
+        }
+      />
 
       {tasks.length === 0 ? (
         <EmptyState

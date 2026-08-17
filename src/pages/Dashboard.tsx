@@ -6,7 +6,6 @@ import {
   Wallet,
   TrendingUp,
   Plane,
-  Clock,
   Edit3,
   Compass,
 } from 'lucide-react'
@@ -17,6 +16,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarWidget } from '@/components/shared/Calendar'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { useTrip } from '@/context/TripContext'
 import { useAuth } from '@/context/AuthContext'
 import { formatCurrency, formatDate } from '@/lib/utils'
@@ -58,28 +58,57 @@ export function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3"
-      >
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
-            {hasTripInfo
-              ? `Welcome to ${trip.name || 'your trip'}`
-              : 'Start planning your trip'}
-          </p>
-        </div>
-      </motion.div>
+      <PageHeader
+        title="Dashboard"
+        description={hasTripInfo ? `Welcome to ${trip.name || 'your trip'}` : 'Start planning your trip'}
+      />
 
-      {!hasTripInfo ? (
+      {hasTripInfo ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl bg-[#161411] text-[#f4efe6] p-6 sm:p-8"
+        >
+          <p className="text-[11px] uppercase tracking-[0.22em] text-[#cfc6b8]">Upcoming trip</p>
+          <h2 className="font-display text-2xl sm:text-3xl font-bold mt-2 tracking-tight">
+            {trip.name || 'Your trip'}
+          </h2>
+          {trip.destination ? (
+            <p className="mt-1.5 text-[#cfc6b8] flex items-center gap-1.5">
+              <MapPin className="h-4 w-4 shrink-0" />
+              {trip.destination}
+            </p>
+          ) : null}
+          <div className="mt-6 flex flex-wrap items-end gap-6">
+            {countdown !== null ? (
+              <div>
+                <p className="font-display text-5xl font-bold leading-none">
+                  {countdown > 0 ? countdown : countdown === 0 ? '0' : Math.abs(countdown)}
+                </p>
+                <p className="text-sm text-[#cfc6b8] mt-2">
+                  {countdown > 0
+                    ? 'days until departure'
+                    : countdown === 0
+                      ? 'Departure day'
+                      : 'days since departure'}
+                </p>
+              </div>
+            ) : null}
+            {trip.travelDate ? (
+              <p className="text-sm text-[#cfc6b8]">
+                {formatDate(trip.travelDate)}
+                {trip.returnDate ? ` — ${formatDate(trip.returnDate)}` : ''}
+              </p>
+            ) : null}
+          </div>
+        </motion.div>
+      ) : (
         <EmptyState
           icon={Compass}
           title="Start planning your trip"
           description="Open Settings to set your trip name, destination, dates, and budget — then build your schedule."
         />
-      ) : null}
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
         <DashboardCard
@@ -150,30 +179,21 @@ export function Dashboard() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-primary" />
-              Countdown
+              <TrendingUp className="h-5 w-5 text-primary" />
+              Status
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {countdown !== null ? (
-              <div className="text-center py-4">
-                <p className="font-display text-5xl font-bold text-primary">
-                  {countdown > 0 ? countdown : countdown === 0 ? '0' : Math.abs(countdown)}
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {countdown > 0
-                    ? 'days until departure'
-                    : countdown === 0
-                      ? 'Departure day!'
-                      : 'days since departure'}
-                </p>
-              </div>
-            ) : (
-              <div className="text-center py-6 text-muted-foreground">
-                <Calendar className="h-10 w-10 mx-auto mb-2 opacity-40" />
-                <p className="text-sm">Set a travel date to see the countdown</p>
-              </div>
-            )}
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {progress === 0
+                ? 'Add activities and tasks to track planning.'
+                : `${progress}% of the trip is planned.`}
+            </p>
+            {trip.budget > 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {formatCurrency(totalSpent)} of {formatCurrency(trip.budget)} spent
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       </div>

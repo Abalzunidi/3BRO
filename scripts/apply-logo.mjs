@@ -1,11 +1,9 @@
 import sharp from 'sharp'
 import path from 'path'
 
-const src = process.argv[2]
+const src = process.argv[2] || path.resolve('public/logo.png')
 const pub = path.resolve('public')
 
-const image = sharp(src)
-const { width, height } = await image.metadata()
 const { data, info } = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true })
 const w = info.width
 const h = info.height
@@ -50,31 +48,53 @@ for (let y = minY; y < iconBottom; y++) {
   }
 }
 
-const side = Math.max(iconBottom - minY, colMax - colMin + 1)
-const pad = Math.round(side * 0.1)
-const size = Math.min(w, iconBottom - minY + pad)
-const left = Math.max(0, Math.min(w - size, Math.round((colMin + colMax) / 2 - size / 2)))
-const top = Math.max(0, minY - pad)
-const emblem = { left, top, width: size, height: Math.min(size, iconBottom - top) }
-emblem.width = emblem.height
+const emblemW = colMax - colMin + 1
+const emblemH = iconBottom - minY
+const side = Math.max(emblemW, emblemH)
+const pad = Math.round(side * 0.22)
+const outSize = side + pad * 2
+const extract = {
+  left: colMin,
+  top: minY,
+  width: emblemW,
+  height: emblemH,
+}
 
-console.log({ width, height, minY, maxY, gapStart, gapEnd, emblem })
+console.log({ w, h, minY, maxY, gapStart, gapEnd, extract, outSize, pad })
 
-await sharp(src).png({ compressionLevel: 9 }).toFile(path.join(pub, 'logo.png'))
-await sharp(src).extract(emblem).png({ compressionLevel: 9 }).toFile(path.join(pub, 'logo-mark.png'))
+const logoOut = path.join(pub, 'logo.png')
+if (path.resolve(src) !== path.resolve(logoOut)) {
+  await sharp(src).png({ compressionLevel: 9 }).toFile(logoOut)
+}
 
-async function writeSquare(out, px, crop) {
-  await sharp(src)
-    .extract(crop)
-    .resize(px, px, { fit: 'cover' })
+const emblemBuf = await sharp(src).extract(extract).png().toBuffer()
+const mark = await sharp({
+  create: { width: outSize, height: outSize, channels: 3, background: '#000000' },
+})
+  .composite([
+    {
+      input: emblemBuf,
+      left: Math.round((outSize - emblemW) / 2),
+      top: Math.round((outSize - emblemH) / 2),
+    },
+  ])
+  .png({ compressionLevel: 9 })
+  .toBuffer()
+
+await sharp(mark).toFile(path.join(pub, 'logo-mark.png'))
+
+async function writeSquare(out, px, fromFull) {
+  const input = fromFull ? src : mark
+  await sharp(input)
+    .resize(px, px, { fit: 'contain', background: '#000000' })
     .png({ compressionLevel: 9 })
     .toFile(out)
 }
 
-await writeSquare(path.join(pub, 'favicon-16x16.png'), 16, emblem)
-await writeSquare(path.join(pub, 'favicon-32x32.png'), 32, emblem)
-await writeSquare(path.join(pub, 'apple-touch-icon.png'), 180, { left: 0, top: 0, width: w, height: h })
-await writeSquare(path.join(pub, 'icons', 'icon-192.png'), 192, { left: 0, top: 0, width: w, height: h })
-await writeSquare(path.join(pub, 'icons', 'icon-512.png'), 512, { left: 0, top: 0, width: w, height: h })
+await writeSquare(path.join(pub, 'favicon-16x16.png'), 16, false)
+await writeSquare(path.join(pub, 'favicon-32x32.png'), 32, false)
+await writeSquare(path.join(pub, 'apple-touch-icon.png'), 180, true)
+await writeSquare(path.join(pub, 'icons', 'icon-192.png'), 192, true)
+await writeSquare(path.join(pub, 'icons', 'icon-512.png'), 512, true)
 
 console.log('wrote logos')

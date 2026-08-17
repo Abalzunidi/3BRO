@@ -36,13 +36,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
   const content = (
     <div className="flex h-full flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
-      <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--sidebar-border)]">
+      <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--sidebar-border)]">
         <div className="flex items-center min-w-0">
-          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-10 w-10 rounded-xl object-cover shadow-sm shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-12 w-12 rounded-xl object-contain bg-black p-1 shrink-0" />
         </div>
         <button
           onClick={onClose}
-          className="lg:hidden h-11 w-11 flex items-center justify-center rounded-xl hover:bg-accent cursor-pointer touch-manipulation shrink-0"
+          className="lg:hidden h-11 w-11 flex items-center justify-center rounded-xl text-[var(--sidebar-foreground)]/70 hover:bg-[var(--sidebar-accent)] cursor-pointer touch-manipulation shrink-0"
           aria-label="Close sidebar"
         >
           <X className="h-5 w-5" />
@@ -60,10 +60,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               onClick={onClose}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-sm font-medium transition-all duration-200 touch-manipulation min-h-12',
+                  'flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-sm font-medium touch-manipulation min-h-12',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                    : 'text-muted-foreground hover:bg-[var(--sidebar-accent)] hover:text-foreground'
+                    ? 'bg-[var(--sidebar-foreground)] text-[var(--sidebar)]'
+                    : 'text-[var(--sidebar-foreground)]/65 hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]'
                 )
               }
             >
@@ -78,10 +78,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
             onClick={onClose}
             className={({ isActive }) =>
               cn(
-                'flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-sm font-medium transition-all duration-200 touch-manipulation min-h-12',
+                'flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-sm font-medium touch-manipulation min-h-12',
                 isActive
-                  ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
-                  : 'text-muted-foreground hover:bg-[var(--sidebar-accent)] hover:text-foreground'
+                  ? 'bg-[var(--sidebar-foreground)] text-[var(--sidebar)]'
+                  : 'text-[var(--sidebar-foreground)]/65 hover:bg-[var(--sidebar-accent)] hover:text-[var(--sidebar-foreground)]'
               )
             }
           >
@@ -91,23 +91,22 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       </nav>
 
-      <div className="px-5 py-4 border-t border-[var(--sidebar-border)] space-y-2">
+      <div className="px-4 py-4 border-t border-[var(--sidebar-border)] space-y-3">
         {member && (
-          <div className="flex items-center justify-between gap-2">
-            <p className="text-xs text-muted-foreground truncate">{member.name}</p>
+          <div className="flex items-center justify-between gap-2 rounded-2xl bg-[var(--sidebar-accent)] px-3 py-2.5">
+            <p className="text-sm text-[var(--sidebar-foreground)] truncate">{member.name}</p>
             <button
               type="button"
               onClick={() => {
                 onClose()
                 logout()
               }}
-              className="text-xs text-primary font-medium cursor-pointer"
+              className="text-xs text-[var(--sidebar-foreground)]/70 font-medium cursor-pointer shrink-0"
             >
               Logout
             </button>
           </div>
         )}
-        <p className="text-xs text-muted-foreground text-center">3bro © {new Date().getFullYear()}</p>
       </div>
     </div>
   )

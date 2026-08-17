@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Banknote, Minus, Plus, Trash2 } from 'lucide-react'
 import { BudgetCard } from '@/components/shared/BudgetCard'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { FloatingActionButton } from '@/components/shared/FloatingActionButton'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,10 +43,7 @@ export function Payments() {
 
   return (
     <div className="space-y-6 pb-20">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Payments</h1>
-        <p className="text-muted-foreground mt-1">Who paid, and how much — add or subtract anytime</p>
-      </motion.div>
+      <PageHeader title="Payments" description="Who paid, and how much — add or subtract anytime" />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <BudgetCard title="People" amount={String(payments.length)} icon={Banknote} delay={0} />

@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { Wallet, TrendingDown, PiggyBank, Plus, Trash2, BarChart3 } from 'lucide-react'
 import { BudgetCard } from '@/components/shared/BudgetCard'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { FloatingActionButton } from '@/components/shared/FloatingActionButton'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -67,10 +68,7 @@ export function Budget() {
 
   return (
     <div className="space-y-6 pb-20">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Budget</h1>
-        <p className="text-muted-foreground mt-1">Track your trip expenses</p>
-      </motion.div>
+      <PageHeader title="Budget" description="Track your trip expenses" />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <BudgetCard

@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Images } from 'lucide-react'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { ImageUpload } from '@/components/shared/ImageUpload'
 import { ImageGalleryGrid } from '@/components/shared/ImageGalleryGrid'
 import { ImageAnnotateDialog } from '@/components/shared/ImageAnnotateDialog'
@@ -10,7 +11,6 @@ import { useTrip } from '@/context/TripContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { fileToCloudDataUrl } from '@/lib/image'
-import { motion } from 'framer-motion'
 
 type Filter = 'all' | 'captioned' | 'liked'
 
@@ -89,16 +89,14 @@ export function Gallery() {
 
   return (
     <div className="space-y-5">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Gallery</h1>
-          <p className="text-muted-foreground mt-1">
-            {gallery.length === 0
-              ? 'Your trip memories'
-              : `${gallery.length} photo${gallery.length === 1 ? '' : 's'}`}
-          </p>
-        </div>
-      </motion.div>
+      <PageHeader
+        title="Gallery"
+        description={
+          gallery.length === 0
+            ? 'Your trip memories'
+            : `${gallery.length} photo${gallery.length === 1 ? '' : 's'}`
+        }
+      />
 
       {canUploadGallery && <ImageUpload onUpload={handleUpload} compact={gallery.length > 0} />}
 

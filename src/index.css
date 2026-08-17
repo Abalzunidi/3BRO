@@ -27,50 +27,51 @@
 }
 
 :root {
-  --background: #fff5f5;
-  --foreground: #1a1a1a;
-  --card: #ffffff;
-  --card-foreground: #1a1a1a;
-  --primary: #b91c1c;
+  --background: #f4efe6;
+  --foreground: #161411;
+  --card: #fffcf8;
+  --card-foreground: #161411;
+  --primary: #b42318;
   --primary-foreground: #ffffff;
-  --secondary: #dc2626;
+  --secondary: #8f1d14;
   --secondary-foreground: #ffffff;
-  --accent: #fee2e2;
-  --accent-foreground: #b91c1c;
-  --muted: #fef2f2;
-  --muted-foreground: #737373;
-  --destructive: #ef4444;
-  --border: #fecaca;
-  --input: #fecaca;
-  --ring: #b91c1c;
-  --radius: 16px;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #1a1a1a;
-  --sidebar-accent: #fee2e2;
-  --sidebar-border: #fecaca;
+  --accent: #efe6d8;
+  --accent-foreground: #7a1e16;
+  --muted: #eee6d9;
+  --muted-foreground: #6f675c;
+  --destructive: #dc2626;
+  --border: #e4d8c4;
+  --input: #e4d8c4;
+  --ring: #b42318;
+  --radius: 18px;
+  --sidebar: #161411;
+  --sidebar-foreground: #f4efe6;
+  --sidebar-accent: #2a2620;
+  --sidebar-border: #2a2620;
 }
 
 .dark {
-  --background: #0f0a0a;
-  --foreground: #fafafa;
-  --card: #1a1212;
-  --card-foreground: #fafafa;
-  --primary: #ef4444;
-  --primary-foreground: #ffffff;
-  --secondary: #dc2626;
-  --secondary-foreground: #ffffff;
-  --accent: #2a1515;
-  --accent-foreground: #fca5a5;
-  --muted: #1f1515;
-  --muted-foreground: #a3a3a3;
+  --background: #0c0b0a;
+  --foreground: #f4efe6;
+  --card: #171411;
+  --card-foreground: #f4efe6;
+  --primary: #e8d5b5;
+  --primary-foreground: #161411;
+  --secondary: #d4c2a0;
+  --secondary-foreground: #161411;
+  --accent: #2a241c;
+  --accent-foreground: #e8d5b5;
+  --muted: #1c1814;
+  --muted-foreground: #a39888;
   --destructive: #f87171;
-  --border: #3f1f1f;
-  --input: #3f1f1f;
-  --ring: #ef4444;
-  --sidebar: #140e0e;
-  --sidebar-foreground: #fafafa;
-  --sidebar-accent: #2a1515;
-  --sidebar-border: #3f1f1f;
+  --border: #2e2923;
+  --input: #2e2923;
+  --ring: #e8d5b5;
+  --sidebar: #0c0b0a;
+  --sidebar-foreground: #f4efe6;
+  --sidebar-accent: #221e19;
+  --sidebar-border: #2e2923;
+  color-scheme: dark;
 }
 
 * {
@@ -82,6 +83,7 @@ html {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
   touch-action: manipulation;
+  color-scheme: light;
 }
 
 body {

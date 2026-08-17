@@ -16,6 +16,7 @@ import {
 import { CalendarDays } from 'lucide-react'
 import { FloatingActionButton } from '@/components/shared/FloatingActionButton'
 import { EmptyState } from '@/components/shared/EmptyState'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { TimelineItem } from '@/components/shared/Timeline'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -39,7 +40,6 @@ import {
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
 import type { ActivityStatus, ScheduleActivity } from '@/types'
-import { motion } from 'framer-motion'
 
 const emptyForm = {
   name: '',
@@ -122,10 +122,7 @@ export function Schedule() {
 
   return (
     <div className="space-y-6 pb-20">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Schedule</h1>
-        <p className="text-muted-foreground mt-1">Plan your day-by-day itinerary</p>
-      </motion.div>
+      <PageHeader title="Schedule" description="Plan your day-by-day itinerary" />
 
       {sorted.length === 0 ? (
         <EmptyState
