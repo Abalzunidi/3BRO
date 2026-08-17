@@ -12,7 +12,7 @@ import { useToast } from '@/context/ToastContext'
 import { fileToCloudDataUrl } from '@/lib/image'
 import { motion } from 'framer-motion'
 
-type Filter = 'all' | 'captioned'
+type Filter = 'all' | 'captioned' | 'liked'
 
 export function Gallery() {
   const { gallery, addGalleryImages, deleteGalleryImage, toggleGalleryLike } = useTrip()
@@ -27,8 +27,9 @@ export function Gallery() {
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
-    return gallery.filter((img) => {
+    return [...gallery].reverse().filter((img) => {
       if (filter === 'captioned' && !img.caption) return false
+      if (filter === 'liked' && !img.likedBy?.length) return false
       if (!q) return true
       return (img.caption || '').toLowerCase().includes(q)
     })
@@ -87,13 +88,19 @@ export function Gallery() {
   }
 
   return (
-    <div className="space-y-6">
-      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Gallery</h1>
-        <p className="text-muted-foreground mt-1">Your trip memories</p>
+    <div className="space-y-5">
+      <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold tracking-tight">Gallery</h1>
+          <p className="text-muted-foreground mt-1">
+            {gallery.length === 0
+              ? 'Your trip memories'
+              : `${gallery.length} photo${gallery.length === 1 ? '' : 's'}`}
+          </p>
+        </div>
       </motion.div>
 
-      <ImageUpload onUpload={handleUpload} />
+      <ImageUpload onUpload={handleUpload} compact={gallery.length > 0} />
 
       {gallery.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
@@ -103,21 +110,22 @@ export function Gallery() {
             placeholder="Filter photos…"
             className="flex-1"
           />
-          <div className="flex gap-2">
-            <Button
-              variant={filter === 'all' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('all')}
-            >
-              All
-            </Button>
-            <Button
-              variant={filter === 'captioned' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setFilter('captioned')}
-            >
-              With text
-            </Button>
+          <div className="flex gap-2 overflow-x-auto">
+            {([
+              ['all', 'All'],
+              ['captioned', 'With text'],
+              ['liked', 'Liked'],
+            ] as const).map(([id, label]) => (
+              <Button
+                key={id}
+                variant={filter === id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter(id)}
+                className="shrink-0"
+              >
+                {label}
+              </Button>
+            ))}
           </div>
         </div>
       )}
