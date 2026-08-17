@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { useTrip } from '@/context/TripContext'
+import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { formatCurrency } from '@/lib/utils'
 import { toWesternDigits } from '@/lib/sections'
@@ -23,7 +24,9 @@ import { motion } from 'framer-motion'
 
 export function Payments() {
   const { payments, addPayment, adjustPayment, setPaymentAmount, deletePayment, totalPaid } = useTrip()
+  const { canEdit } = useAuth()
   const { toast } = useToast()
+  const editable = canEdit('payments')
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ name: '', amount: '' })
 
@@ -43,7 +46,10 @@ export function Payments() {
 
   return (
     <div className="space-y-6 pb-20">
-      <PageHeader title="Payments" description="Who paid, and how much — add or subtract anytime" />
+      <PageHeader
+        title="Payments"
+        description={editable ? 'Who paid, and how much — add or subtract anytime' : 'Who paid, and how much'}
+      />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <BudgetCard title="People" amount={String(payments.length)} icon={Banknote} delay={0} />
@@ -54,8 +60,8 @@ export function Payments() {
         <EmptyState
           icon={Banknote}
           title="No payments yet"
-          description="Add a name and the amount they paid. You can increase or decrease it later."
-          action={<Button onClick={() => setOpen(true)}>+ Add name</Button>}
+          description={editable ? 'Add a name and the amount they paid. You can increase or decrease it later.' : 'Payments will show up here when someone adds them.'}
+          action={editable ? <Button onClick={() => setOpen(true)}>+ Add name</Button> : undefined}
         />
       ) : (
         <div className="space-y-3">
@@ -69,19 +75,22 @@ export function Payments() {
             >
               <div className="flex items-start justify-between gap-3">
                 <p className="font-medium truncate">{person.name}</p>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => {
-                    deletePayment(person.id)
-                    toast('Removed')
-                  }}
-                  aria-label={`Remove ${person.name}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                {editable && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 shrink-0 text-muted-foreground hover:text-destructive"
+                    onClick={() => {
+                      deletePayment(person.id)
+                      toast('Removed')
+                    }}
+                    aria-label={`Remove ${person.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
+              {editable ? (
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <Button variant="outline" size="sm" onClick={() => adjustPayment(person.id, -10)}>
                   -10
@@ -121,13 +130,14 @@ export function Payments() {
                   +10
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground mt-2">{formatCurrency(person.amount)}</p>
+              ) : null}
+              <p className={editable ? 'text-xs text-muted-foreground mt-2' : 'text-lg font-display font-semibold mt-2'}>{formatCurrency(person.amount)}</p>
             </motion.div>
           ))}
         </div>
       )}
 
-      <FloatingActionButton onClick={() => setOpen(true)} label="Add name" />
+      {editable && <FloatingActionButton onClick={() => setOpen(true)} label="Add name" />}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">

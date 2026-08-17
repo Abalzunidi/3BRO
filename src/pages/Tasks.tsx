@@ -24,12 +24,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useTrip } from '@/context/TripContext'
+import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import type { Task, TaskStatus } from '@/types'
 
 export function Tasks() {
   const { tasks, addTask, updateTask, deleteTask } = useTrip()
+  const { canEdit } = useAuth()
   const { toast } = useToast()
+  const editable = canEdit('tasks')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<Task | null>(null)
   const [form, setForm] = useState({ name: '', dueDate: '', status: 'pending' as TaskStatus })
@@ -67,19 +70,21 @@ export function Tasks() {
         title="Tasks"
         description="Keep track of your to-dos"
         action={
-          <Button onClick={openAdd} className="hidden sm:inline-flex self-start">
-            <Plus className="h-4 w-4" />
-            Add Task
-          </Button>
+          editable ? (
+            <Button onClick={openAdd} className="hidden sm:inline-flex self-start">
+              <Plus className="h-4 w-4" />
+              Add Task
+            </Button>
+          ) : undefined
         }
       />
 
       {tasks.length === 0 ? (
         <EmptyState
           icon={CheckSquare}
-          title="Add your first task"
-          description="Create tasks to stay organized before and during your trip."
-          action={<Button onClick={openAdd}>+ Add Task</Button>}
+          title={editable ? 'Add your first task' : 'No tasks yet'}
+          description={editable ? 'Create tasks to stay organized before and during your trip.' : 'Tasks will show up here when someone adds them.'}
+          action={editable ? <Button onClick={openAdd}>+ Add Task</Button> : undefined}
         />
       ) : (
         <div className="space-y-3 max-w-2xl">
@@ -89,6 +94,7 @@ export function Tasks() {
                 key={task.id}
                 task={task}
                 index={i}
+                readOnly={!editable}
                 onEdit={() => openEdit(task)}
                 onDelete={() => {
                   deleteTask(task.id)
@@ -106,7 +112,7 @@ export function Tasks() {
         </div>
       )}
 
-      <FloatingActionButton onClick={openAdd} label="Add Task" className="sm:hidden" />
+      {editable && <FloatingActionButton onClick={openAdd} label="Add Task" className="sm:hidden" />}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useTrip } from '@/context/TripContext'
+import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { fileToCloudDataUrl } from '@/lib/image'
 import { formatCurrency } from '@/lib/utils'
@@ -43,7 +44,9 @@ const emptyForm = {
 
 export function Activities() {
   const { activities, addActivity, updateActivity, deleteActivity } = useTrip()
+  const { canEdit } = useAuth()
   const { toast } = useToast()
+  const editable = canEdit('activities')
   const [formOpen, setFormOpen] = useState(false)
   const [detailOpen, setDetailOpen] = useState(false)
   const [editing, setEditing] = useState<Activity | null>(null)
@@ -110,14 +113,17 @@ export function Activities() {
 
   return (
     <div className="space-y-6 pb-20">
-      <PageHeader title="Activities" description="Explore and manage your trip activities" />
+      <PageHeader
+        title="Activities"
+        description={editable ? 'Explore and manage your trip activities' : 'Trip activities'}
+      />
 
       {activities.length === 0 ? (
         <EmptyState
           icon={MapPinned}
           title="No activities yet"
-          description="Add activities with photos, locations, and maps links."
-          action={<Button onClick={openAdd}>+ Add Activity</Button>}
+          description={editable ? 'Add activities with photos, locations, and maps links.' : 'Activities will show up here when someone adds them.'}
+          action={editable ? <Button onClick={openAdd}>+ Add Activity</Button> : undefined}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -132,7 +138,7 @@ export function Activities() {
         </div>
       )}
 
-      <FloatingActionButton onClick={openAdd} label="Add Activity" />
+      {editable && <FloatingActionButton onClick={openAdd} label="Add Activity" />}
 
       {/* Detail Modal */}
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
@@ -187,11 +193,17 @@ export function Activities() {
                 </a>
               )}
               <DialogFooter>
-                <Button variant="destructive" onClick={() => handleDelete(selected.id)}>
-                  <Trash2 className="h-4 w-4" />
-                  Delete
-                </Button>
-                <Button onClick={() => openEdit(selected)}>Edit</Button>
+                {editable ? (
+                  <>
+                    <Button variant="destructive" onClick={() => handleDelete(selected.id)}>
+                      <Trash2 className="h-4 w-4" />
+                      Delete
+                    </Button>
+                    <Button onClick={() => openEdit(selected)}>Edit</Button>
+                  </>
+                ) : (
+                  <Button variant="outline" onClick={() => setDetailOpen(false)}>Close</Button>
+                )}
               </DialogFooter>
             </>
           )}

@@ -38,6 +38,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useTrip } from '@/context/TripContext'
+import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import type { ActivityStatus, ScheduleActivity } from '@/types'
 
@@ -53,7 +54,9 @@ const emptyForm = {
 
 export function Schedule() {
   const { schedule, addScheduleActivity, updateScheduleActivity, deleteScheduleActivity, reorderSchedule } = useTrip()
+  const { canEdit } = useAuth()
   const { toast } = useToast()
+  const editable = canEdit('schedule')
   const [open, setOpen] = useState(false)
   const [editing, setEditing] = useState<ScheduleActivity | null>(null)
   const [form, setForm] = useState(emptyForm)
@@ -109,6 +112,7 @@ export function Schedule() {
   }
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!editable) return
     const { active, over } = event
     if (!over || active.id === over.id) return
     const ids = sorted.map((a) => a.id)
@@ -122,16 +126,17 @@ export function Schedule() {
 
   return (
     <div className="space-y-6 pb-20">
-      <PageHeader title="Schedule" description="Plan your day-by-day itinerary" />
+      <PageHeader
+        title="Schedule"
+        description={editable ? 'Plan your day-by-day itinerary' : 'Day-by-day itinerary'}
+      />
 
       {sorted.length === 0 ? (
         <EmptyState
           icon={CalendarDays}
           title="No activities yet"
-          description="Add your first schedule activity and drag to reorder."
-          action={
-            <Button onClick={openAdd}>+ Add Activity</Button>
-          }
+          description={editable ? 'Add your first schedule activity and drag to reorder.' : 'Nothing has been added to the schedule yet.'}
+          action={editable ? <Button onClick={openAdd}>+ Add Activity</Button> : undefined}
         />
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -141,7 +146,8 @@ export function Schedule() {
                 <TimelineItem
                   key={activity.id}
                   activity={activity}
-                  onClick={() => openEdit(activity)}
+                  readOnly={!editable}
+                  onClick={editable ? () => openEdit(activity) : undefined}
                 />
               ))}
             </div>
@@ -149,7 +155,7 @@ export function Schedule() {
         </DndContext>
       )}
 
-      <FloatingActionButton onClick={openAdd} label="Add Activity" />
+      {editable && <FloatingActionButton onClick={openAdd} label="Add Activity" />}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-md">

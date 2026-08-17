@@ -17,7 +17,7 @@ import {
 import { useTrip } from '@/context/TripContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
-import { ALL_SECTION_IDS, APP_SECTIONS, normalizePin, normalizeUsername, randomUnusedPin } from '@/lib/sections'
+import { ALL_SECTION_IDS, APP_SECTIONS, memberViewOnly, normalizePin, normalizeUsername, randomUnusedPin } from '@/lib/sections'
 import type { AppSection, Member, MemberRole } from '@/types'
 import { motion } from 'framer-motion'
 
@@ -27,7 +27,7 @@ const emptyForm = {
   pin: '',
   role: 'member' as MemberRole,
   sections: [...ALL_SECTION_IDS] as AppSection[],
-  galleryUpload: true,
+  viewOnly: [] as AppSection[],
 }
 
 export function Admin() {
@@ -55,7 +55,7 @@ export function Admin() {
       pin: member.pin || '',
       role: member.role,
       sections: [...member.sections],
-      galleryUpload: member.galleryUpload !== false,
+      viewOnly: memberViewOnly(member),
     })
     setOpen(true)
   }
@@ -67,8 +67,18 @@ export function Admin() {
       return {
         ...f,
         sections,
-        galleryUpload: id === 'gallery' ? on : f.galleryUpload,
+        viewOnly: on ? f.viewOnly : f.viewOnly.filter((s) => s !== id),
       }
+    })
+  }
+
+  const toggleViewOnly = (id: AppSection) => {
+    setForm((f) => {
+      const sections = f.sections.includes(id) ? f.sections : [...f.sections, id]
+      const viewOnly = f.viewOnly.includes(id)
+        ? f.viewOnly.filter((s) => s !== id)
+        : [...f.viewOnly, id]
+      return { ...f, sections, viewOnly }
     })
   }
 
@@ -104,13 +114,17 @@ export function Admin() {
         return
       }
     }
+    const viewOnly = form.role === 'admin'
+      ? []
+      : form.viewOnly.filter((id) => form.sections.includes(id))
     const payload = {
       name: form.name.trim(),
       username: username || undefined,
       pin,
       role: form.role,
       sections: form.role === 'admin' ? [...ALL_SECTION_IDS] : form.sections,
-      galleryUpload: form.role === 'admin' ? true : form.sections.includes('gallery') && form.galleryUpload,
+      viewOnly,
+      galleryUpload: form.role === 'admin' ? true : form.sections.includes('gallery') && !viewOnly.includes('gallery'),
     }
     if (editing) {
       updateMember(editing.id, payload)
@@ -140,7 +154,7 @@ export function Admin() {
     <div className="space-y-6 pb-20">
       <PageHeader
         title="Admin"
-        description="Give each person a username, a code, or both — then choose which pages they can see"
+        description="Give each person a username, a code, or both — then choose which pages they can see or only view"
       />
 
       {members.length === 0 ? (
@@ -186,8 +200,7 @@ export function Admin() {
                     : member.sections.map((id) => {
                         const label = APP_SECTIONS.find((s) => s.id === id)?.label
                         if (!label) return null
-                        if (id === 'gallery' && member.galleryUpload === false) return 'Gallery (view only)'
-                        return label
+                        return memberViewOnly(member).includes(id) ? `${label} (view only)` : label
                       }).filter(Boolean).join(' · ') || 'No sections'}
                 </p>
               </div>
@@ -210,7 +223,7 @@ export function Admin() {
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit member' : 'Add member'}</DialogTitle>
-            <DialogDescription>They can sign in with username, a 4-digit code, or both. Uncheck pages they should not see.</DialogDescription>
+            <DialogDescription>They can sign in with username, a 4-digit code, or both. Uncheck pages they should not see, or mark a page as view only.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
@@ -275,15 +288,15 @@ export function Admin() {
                         />
                         <span className="text-sm">{section.label}</span>
                       </label>
-                      {section.id === 'gallery' && form.sections.includes('gallery') && (
+                      {form.sections.includes(section.id) && (
                         <label className="flex items-center gap-3 px-3 pb-2.5 pl-10 cursor-pointer hover:bg-accent/40">
                           <input
                             type="checkbox"
-                            checked={form.galleryUpload}
-                            onChange={() => setForm((f) => ({ ...f, galleryUpload: !f.galleryUpload }))}
+                            checked={form.viewOnly.includes(section.id)}
+                            onChange={() => toggleViewOnly(section.id)}
                             className="h-4 w-4 accent-[var(--primary)]"
                           />
-                          <span className="text-sm">Add photos</span>
+                          <span className="text-sm">View only</span>
                         </label>
                       )}
                     </div>

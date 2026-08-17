@@ -9,13 +9,14 @@ import { cn } from '@/lib/utils'
 
 interface TaskCardProps {
   task: Task
-  onEdit: () => void
-  onDelete: () => void
-  onToggleComplete: () => void
+  onEdit?: () => void
+  onDelete?: () => void
+  onToggleComplete?: () => void
   index?: number
+  readOnly?: boolean
 }
 
-export function TaskCard({ task, onEdit, onDelete, onToggleComplete, index = 0 }: TaskCardProps) {
+export function TaskCard({ task, onEdit, onDelete, onToggleComplete, index = 0, readOnly = false }: TaskCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, x: -12 }}
@@ -27,12 +28,14 @@ export function TaskCard({ task, onEdit, onDelete, onToggleComplete, index = 0 }
       <Card className={cn(task.status === 'completed' && 'opacity-70')}>
         <CardContent className="p-4 flex items-center gap-4">
           <button
-            onClick={onToggleComplete}
+            onClick={readOnly ? undefined : onToggleComplete}
+            disabled={readOnly}
             className={cn(
-              'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2 transition-all cursor-pointer',
+              'flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border-2',
               task.status === 'completed'
                 ? 'bg-primary border-primary text-primary-foreground'
-                : 'border-border hover:border-primary hover:bg-accent'
+                : 'border-border',
+              readOnly ? 'cursor-default' : 'cursor-pointer hover:border-primary hover:bg-accent'
             )}
             aria-label={task.status === 'completed' ? 'Mark as pending' : 'Mark as complete'}
           >
@@ -55,14 +58,16 @@ export function TaskCard({ task, onEdit, onDelete, onToggleComplete, index = 0 }
               <StatusBadge status={task.status} type="task" />
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Edit task">
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete task">
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
+          {!readOnly && (
+            <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" onClick={onEdit} aria-label="Edit task">
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={onDelete} aria-label="Delete task">
+                <Trash2 className="h-4 w-4 text-destructive" />
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     </motion.div>

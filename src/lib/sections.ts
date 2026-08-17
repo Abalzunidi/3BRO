@@ -12,11 +12,24 @@ export const APP_SECTIONS: { id: AppSection; path: string; label: string }[] = [
 
 export const ALL_SECTION_IDS: AppSection[] = APP_SECTIONS.map((s) => s.id)
 
-export function canUploadGallery(member: Member | null | undefined) {
+export function memberViewOnly(member: Member | null | undefined): AppSection[] {
+  if (!member || member.role === 'admin') return []
+  const list = [...(member.viewOnly || [])]
+  if (member.galleryUpload === false && member.sections.includes('gallery') && !list.includes('gallery')) {
+    list.push('gallery')
+  }
+  return list.filter((id) => member.sections.includes(id))
+}
+
+export function canEditSection(member: Member | null | undefined, section: AppSection) {
   if (!member) return false
   if (member.role === 'admin') return true
-  if (!member.sections.includes('gallery')) return false
-  return member.galleryUpload !== false
+  if (!member.sections.includes(section)) return false
+  return !memberViewOnly(member).includes(section)
+}
+
+export function canUploadGallery(member: Member | null | undefined) {
+  return canEditSection(member, 'gallery')
 }
 
 export function pathToSection(pathname: string): AppSection | 'admin' | null {

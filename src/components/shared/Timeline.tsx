@@ -10,11 +10,13 @@ import { cn } from '@/lib/utils'
 interface TimelineItemProps {
   activity: ScheduleActivity
   onClick?: () => void
+  readOnly?: boolean
 }
 
-export function TimelineItem({ activity, onClick }: TimelineItemProps) {
+export function TimelineItem({ activity, onClick, readOnly = false }: TimelineItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: activity.id,
+    disabled: readOnly,
   })
 
   const style = {
@@ -26,21 +28,23 @@ export function TimelineItem({ activity, onClick }: TimelineItemProps) {
     <div ref={setNodeRef} style={style} className={cn(isDragging && 'z-50 opacity-90')}>
       <Card
         className={cn(
-          'cursor-pointer hover:border-primary/40',
+          onClick && 'cursor-pointer',
           isDragging && 'shadow-xl ring-2 ring-primary/30'
         )}
         onClick={onClick}
       >
         <CardContent className="p-4 flex gap-3">
-          <button
-            className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 mt-1"
-            {...attributes}
-            {...listeners}
-            onClick={(e) => e.stopPropagation()}
-            aria-label="Drag to reorder"
-          >
-            <GripVertical className="h-5 w-5" />
-          </button>
+          {!readOnly && (
+            <button
+              className="touch-none cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground shrink-0 mt-1"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+              aria-label="Drag to reorder"
+            >
+              <GripVertical className="h-5 w-5" />
+            </button>
+          )}
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-display font-semibold truncate">{activity.name}</h3>

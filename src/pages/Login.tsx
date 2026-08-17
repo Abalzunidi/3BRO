@@ -62,7 +62,7 @@ export function Login() {
   const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'del']
 
   return (
-    <div className="dark min-h-dvh bg-[#0c0b0a] text-foreground flex items-center justify-center p-4">
+    <div className="dark fixed inset-0 overflow-y-auto bg-[#0c0b0a] text-foreground flex items-center justify-center p-4 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center text-center mb-8">
           <img

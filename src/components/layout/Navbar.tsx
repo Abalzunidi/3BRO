@@ -70,7 +70,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           <img
             src={`${import.meta.env.BASE_URL}logo-mark.png`}
             alt="3 BRO"
-            className="lg:hidden h-9 w-9 rounded-lg object-contain bg-black p-0.5 shrink-0"
+            className="lg:hidden h-9 w-9 object-contain shrink-0 brightness-0 dark:brightness-100"
           />
           <div className="min-w-0">
             <p className="font-display font-semibold truncate text-[15px] leading-tight">

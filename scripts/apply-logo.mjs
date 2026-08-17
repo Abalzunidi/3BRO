@@ -4,7 +4,21 @@ import path from 'path'
 const src = process.argv[2] || path.resolve('public/logo.png')
 const pub = path.resolve('public')
 
-const { data, info } = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+async function toTransparentPng(input) {
+  const { data, info } = await sharp(input).ensureAlpha().raw().toBuffer({ resolveWithObject: true })
+  const out = Buffer.from(data)
+  for (let i = 0; i < out.length; i += 4) {
+    const lum = out[i] + out[i + 1] + out[i + 2]
+    if (lum < 36) out[i + 3] = 0
+    else if (lum < 110) out[i + 3] = Math.round(out[i + 3] * ((lum - 36) / 74))
+  }
+  return sharp(out, { raw: { width: info.width, height: info.height, channels: 4 } })
+    .png({ compressionLevel: 9 })
+    .toBuffer()
+}
+
+const rgb = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+const { data, info } = rgb
 const w = info.width
 const h = info.height
 
@@ -62,14 +76,17 @@ const extract = {
 
 console.log({ w, h, minY, maxY, gapStart, gapEnd, extract, outSize, pad })
 
-const logoOut = path.join(pub, 'logo.png')
-if (path.resolve(src) !== path.resolve(logoOut)) {
-  await sharp(src).png({ compressionLevel: 9 }).toFile(logoOut)
-}
+const logoClear = await toTransparentPng(src)
+await sharp(logoClear).toFile(path.join(pub, 'logo.png'))
 
-const emblemBuf = await sharp(src).extract(extract).png().toBuffer()
+const emblemBuf = await toTransparentPng(await sharp(src).extract(extract).png().toBuffer())
 const mark = await sharp({
-  create: { width: outSize, height: outSize, channels: 3, background: '#000000' },
+  create: {
+    width: outSize,
+    height: outSize,
+    channels: 4,
+    background: { r: 0, g: 0, b: 0, alpha: 0 },
+  },
 })
   .composite([
     {
@@ -83,18 +100,25 @@ const mark = await sharp({
 
 await sharp(mark).toFile(path.join(pub, 'logo-mark.png'))
 
-async function writeSquare(out, px, fromFull) {
-  const input = fromFull ? src : mark
-  await sharp(input)
-    .resize(px, px, { fit: 'contain', background: '#000000' })
+async function writeTransparent(out, px, fromFull) {
+  await sharp(fromFull ? logoClear : mark)
+    .resize(px, px, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png({ compressionLevel: 9 })
     .toFile(out)
 }
 
-await writeSquare(path.join(pub, 'favicon-16x16.png'), 16, false)
-await writeSquare(path.join(pub, 'favicon-32x32.png'), 32, false)
-await writeSquare(path.join(pub, 'apple-touch-icon.png'), 180, true)
-await writeSquare(path.join(pub, 'icons', 'icon-192.png'), 192, true)
-await writeSquare(path.join(pub, 'icons', 'icon-512.png'), 512, true)
+async function writeOpaqueIcon(out, px, fromFull) {
+  await sharp(fromFull ? logoClear : mark)
+    .resize(px, px, { fit: 'contain', background: { r: 12, g: 11, b: 10, alpha: 1 } })
+    .flatten({ background: '#0c0b0a' })
+    .png({ compressionLevel: 9 })
+    .toFile(out)
+}
+
+await writeTransparent(path.join(pub, 'favicon-16x16.png'), 16, false)
+await writeTransparent(path.join(pub, 'favicon-32x32.png'), 32, false)
+await writeOpaqueIcon(path.join(pub, 'apple-touch-icon.png'), 180, true)
+await writeOpaqueIcon(path.join(pub, 'icons', 'icon-192.png'), 192, true)
+await writeOpaqueIcon(path.join(pub, 'icons', 'icon-512.png'), 512, true)
 
 console.log('wrote logos')

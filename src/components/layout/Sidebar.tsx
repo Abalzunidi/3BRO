@@ -38,7 +38,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
     <div className="flex h-full flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex items-center justify-between px-5 py-5 border-b border-[var(--sidebar-border)]">
         <div className="flex items-center min-w-0">
-          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-12 w-12 rounded-xl object-contain bg-black p-1 shrink-0" />
+          <img src={`${import.meta.env.BASE_URL}logo-mark.png`} alt="3 BRO" className="h-12 w-12 object-contain shrink-0" />
         </div>
         <button
           onClick={onClose}

@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTrip } from '@/context/TripContext'
-import { ALL_SECTION_IDS, APP_SECTIONS, canUploadGallery as memberCanUploadGallery, memberMatchesLogin, normalizePin, normalizeUsername } from '@/lib/sections'
+import { ALL_SECTION_IDS, APP_SECTIONS, canEditSection, canUploadGallery as memberCanUploadGallery, memberMatchesLogin, normalizePin, normalizeUsername } from '@/lib/sections'
 import type { AppSection, Member } from '@/types'
 
 const SESSION_KEY = '3bro-session-id'
@@ -13,6 +13,7 @@ interface AuthContextValue {
   logout: () => void
   setupAdmin: (name: string, username: string, pin: string) => string | null
   canAccess: (section: AppSection | 'admin') => boolean
+  canEdit: (section: AppSection) => boolean
   canUploadGallery: boolean
   firstPath: string
 }
@@ -89,6 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 
   const canUploadGallery = memberCanUploadGallery(member)
+  const canEdit = useCallback(
+    (section: AppSection) => canEditSection(member, section),
+    [member]
+  )
 
   const firstPath = useMemo(() => {
     if (!member) return '/'
@@ -105,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     setupAdmin,
     canAccess,
+    canEdit,
     canUploadGallery,
     firstPath,
   }

@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useTrip } from '@/context/TripContext'
+import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { motion } from 'framer-motion'
@@ -32,7 +33,9 @@ const categories = ['Food', 'Transport', 'Accommodation', 'Activities', 'Shoppin
 
 export function Budget() {
   const { trip, expenses, addExpense, deleteExpense, totalSpent, remainingBudget } = useTrip()
+  const { canEdit } = useAuth()
   const { toast } = useToast()
+  const editable = canEdit('budget')
   const [open, setOpen] = useState(false)
   const [form, setForm] = useState({ item: '', category: 'Food', amount: 0, date: '' })
 
@@ -97,19 +100,21 @@ export function Budget() {
         <Card className="lg:col-span-2">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle>Expenses</CardTitle>
-            <Button size="sm" onClick={() => setOpen(true)} className="hidden sm:inline-flex">
-              <Plus className="h-4 w-4" />
-              Add Expense
-            </Button>
+            {editable && (
+              <Button size="sm" onClick={() => setOpen(true)} className="hidden sm:inline-flex">
+                <Plus className="h-4 w-4" />
+                Add Expense
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {expenses.length === 0 ? (
               <EmptyState
                 icon={Wallet}
                 title="No expenses yet"
-                description="Add your first expense to start tracking your budget."
+                description={editable ? 'Add your first expense to start tracking your budget.' : 'Expenses will show up here when someone adds them.'}
                 className="border-0 bg-transparent py-8"
-                action={<Button onClick={() => setOpen(true)}>+ Add Expense</Button>}
+                action={editable ? <Button onClick={() => setOpen(true)}>+ Add Expense</Button> : undefined}
               />
             ) : (
               <div className="overflow-x-auto">
@@ -120,7 +125,7 @@ export function Budget() {
                       <th className="pb-3 font-medium pr-4">Category</th>
                       <th className="pb-3 font-medium pr-4">Amount</th>
                       <th className="pb-3 font-medium pr-4">Date</th>
-                      <th className="pb-3 font-medium w-10" />
+                      {editable && <th className="pb-3 font-medium w-10" />}
                     </tr>
                   </thead>
                   <tbody>
@@ -134,19 +139,21 @@ export function Budget() {
                         </td>
                         <td className="py-3 pr-4 font-display font-semibold">{formatCurrency(expense.amount)}</td>
                         <td className="py-3 pr-4 text-muted-foreground">{formatDate(expense.date)}</td>
-                        <td className="py-3">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              deleteExpense(expense.id)
-                              toast('Expense deleted')
-                            }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </Button>
-                        </td>
+                        {editable && (
+                          <td className="py-3">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              onClick={() => {
+                                deleteExpense(expense.id)
+                                toast('Expense deleted')
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                            </Button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -228,7 +235,7 @@ export function Budget() {
         </Card>
       </div>
 
-      <FloatingActionButton onClick={() => setOpen(true)} label="Add Expense" className="sm:hidden" />
+      {editable && <FloatingActionButton onClick={() => setOpen(true)} label="Add Expense" className="sm:hidden" />}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>

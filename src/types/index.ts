@@ -67,6 +67,8 @@ export interface Member {
   username?: string
   role: MemberRole
   sections: AppSection[]
+  /** Sections the member can open but not add, edit, or delete. */
+  viewOnly?: AppSection[]
   /** When false, the member can view Gallery but cannot add or delete photos. Default true. */
   galleryUpload?: boolean
 }
