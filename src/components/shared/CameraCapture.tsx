@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Camera, RefreshCw, X } from 'lucide-react'
+import { Camera, RefreshCw, X, Zap, ZapOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PHOTO_FILTERS, photoFilterCss, snapshotVideo, type PhotoFilterId } from '@/lib/image'
 import { cn } from '@/lib/utils'
@@ -12,6 +12,25 @@ interface CameraCaptureProps {
   onFallback: () => void
 }
 
+type TrackCaps = MediaTrackCapabilities & { torch?: boolean }
+
+function sleep(ms: number) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms))
+}
+
+async function applyTorch(stream: MediaStream | null, on: boolean) {
+  const track = stream?.getVideoTracks()[0]
+  if (!track?.getCapabilities) return false
+  const caps = track.getCapabilities() as TrackCaps
+  if (!caps.torch) return false
+  try {
+    await track.applyConstraints({ advanced: [{ torch: on }] as unknown as MediaTrackConstraintSet[] })
+    return true
+  } catch {
+    return false
+  }
+}
+
 export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCaptureProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
@@ -21,6 +40,9 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
   onFallbackRef.current = onFallback
   const [facing, setFacing] = useState<'environment' | 'user'>('environment')
   const [filter, setFilter] = useState<PhotoFilterId>('none')
+  const [flash, setFlash] = useState(false)
+  const [hasTorch, setHasTorch] = useState(false)
+  const [screenFlash, setScreenFlash] = useState(false)
   const [ready, setReady] = useState(false)
   const [busy, setBusy] = useState(false)
 
@@ -29,6 +51,7 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
 
     let cancelled = false
     setReady(false)
+    setHasTorch(false)
 
     const start = async () => {
       try {
@@ -50,6 +73,10 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
         if (!video) return
         video.srcObject = stream
         await video.play()
+        const track = stream.getVideoTracks()[0]
+        const torch = Boolean((track?.getCapabilities?.() as TrackCaps | undefined)?.torch)
+        setHasTorch(torch)
+        if (torch && flash) await applyTorch(stream, true)
         setReady(true)
       } catch {
         if (!cancelled) {
@@ -63,11 +90,17 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
 
     return () => {
       cancelled = true
+      void applyTorch(streamRef.current, false)
       streamRef.current?.getTracks().forEach((track) => track.stop())
       streamRef.current = null
       if (videoRef.current) videoRef.current.srcObject = null
     }
   }, [open, facing])
+
+  useEffect(() => {
+    if (!open || !ready || !hasTorch) return
+    void applyTorch(streamRef.current, flash)
+  }, [flash, hasTorch, open, ready])
 
   if (!open) return null
 
@@ -76,11 +109,23 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
     if (!video || busy) return
     setBusy(true)
     try {
+      if (flash) {
+        if (hasTorch) {
+          await applyTorch(streamRef.current, true)
+          await sleep(120)
+        } else {
+          setScreenFlash(true)
+          await sleep(180)
+        }
+      }
       const file = await snapshotVideo(video)
+      setScreenFlash(false)
+      void applyTorch(streamRef.current, false)
       streamRef.current?.getTracks().forEach((track) => track.stop())
       onCapture(file, filter)
       onClose()
     } catch {
+      setScreenFlash(false)
       onFallback()
       onClose()
     } finally {
@@ -90,6 +135,9 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
 
   return createPortal(
     <div className="fixed inset-0 z-[80] flex flex-col bg-black text-white">
+      {screenFlash && (
+        <div className="pointer-events-none fixed inset-0 z-[90] bg-white" aria-hidden />
+      )}
       <div className="flex items-center justify-between px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2">
         <Button
           size="icon"
@@ -100,15 +148,29 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
         >
           <X className="h-5 w-5" />
         </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          className="h-11 w-11 rounded-full bg-white/15 text-white hover:bg-white/25"
-          onClick={() => setFacing((side) => (side === 'user' ? 'environment' : 'user'))}
-          aria-label="Switch camera"
-        >
-          <RefreshCw className="h-5 w-5" />
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="icon"
+            variant="secondary"
+            className={cn(
+              'h-11 w-11 rounded-full hover:bg-white/25',
+              flash ? 'bg-amber-400 text-black hover:bg-amber-300' : 'bg-white/15 text-white'
+            )}
+            onClick={() => setFlash((on) => !on)}
+            aria-label={flash ? 'Flash on' : 'Flash off'}
+          >
+            {flash ? <Zap className="h-5 w-5" /> : <ZapOff className="h-5 w-5" />}
+          </Button>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="h-11 w-11 rounded-full bg-white/15 text-white hover:bg-white/25"
+            onClick={() => setFacing((side) => (side === 'user' ? 'environment' : 'user'))}
+            aria-label="Switch camera"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </Button>
+        </div>
       </div>
 
       <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
@@ -117,7 +179,7 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
           className="h-full w-full object-cover"
           style={{
             filter: photoFilterCss(filter),
-            transform: facing === 'environment' ? 'scaleX(-1)' : 'none',
+            transform: 'scaleX(-1)',
           }}
           playsInline
           muted

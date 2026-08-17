@@ -205,17 +205,40 @@ export async function fileToCloudDataUrl(
   }
 }
 
-/** Grab the live camera frame as-is (no horizontal flip). */
+/** Grab the visible camera view as a mirror — same as the preview, so the photo does not flip after shooting. */
 export async function snapshotVideo(video: HTMLVideoElement): Promise<File> {
-  const width = video.videoWidth
-  const height = video.videoHeight
-  if (!width || !height) throw new Error('Camera is not ready')
+  const vw = video.videoWidth
+  const vh = video.videoHeight
+  if (!vw || !vh) throw new Error('Camera is not ready')
+
+  const dw = video.clientWidth
+  const dh = video.clientHeight
+  let sx = 0
+  let sy = 0
+  let sw = vw
+  let sh = vh
+
+  if (dw > 0 && dh > 0) {
+    const videoRatio = vw / vh
+    const viewRatio = dw / dh
+    if (videoRatio > viewRatio) {
+      sw = vh * viewRatio
+      sx = (vw - sw) / 2
+    } else {
+      sh = vw / viewRatio
+      sy = (vh - sh) / 2
+    }
+  }
+
   const canvas = document.createElement('canvas')
-  canvas.width = width
-  canvas.height = height
+  canvas.width = Math.max(1, Math.round(sw))
+  canvas.height = Math.max(1, Math.round(sh))
   const ctx = canvas.getContext('2d', { alpha: false })
   if (!ctx) throw new Error('No canvas')
-  ctx.drawImage(video, 0, 0, width, height)
+  ctx.translate(canvas.width, 0)
+  ctx.scale(-1, 1)
+  ctx.drawImage(video, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height)
+
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob((next) => (next ? resolve(next) : reject(new Error('Could not capture'))), 'image/jpeg', 0.92)
   })

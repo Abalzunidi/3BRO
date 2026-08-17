@@ -52,7 +52,7 @@ export function ImageAnnotateDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit photo</DialogTitle>
-          <DialogDescription>Pick a filter, then save. The photo is not flipped.</DialogDescription>
+          <DialogDescription>Pick a filter, then save. Same as the camera — like a mirror.</DialogDescription>
         </DialogHeader>
 
         {previewUrl && (
