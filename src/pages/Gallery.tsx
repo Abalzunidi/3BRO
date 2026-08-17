@@ -16,7 +16,7 @@ type Filter = 'all' | 'captioned' | 'liked'
 
 export function Gallery() {
   const { gallery, addGalleryImages, deleteGalleryImage, toggleGalleryLike } = useTrip()
-  const { member } = useAuth()
+  const { member, canUploadGallery } = useAuth()
   const { toast } = useToast()
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
@@ -100,7 +100,7 @@ export function Gallery() {
         </div>
       </motion.div>
 
-      <ImageUpload onUpload={handleUpload} compact={gallery.length > 0} />
+      {canUploadGallery && <ImageUpload onUpload={handleUpload} compact={gallery.length > 0} />}
 
       {gallery.length > 0 && (
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
@@ -133,8 +133,12 @@ export function Gallery() {
       {gallery.length === 0 ? (
         <EmptyState
           icon={Images}
-          title="Upload your travel photos"
-          description="Take a photo, write on it, then swipe through the gallery."
+          title={canUploadGallery ? 'Upload your travel photos' : 'No photos yet'}
+          description={
+            canUploadGallery
+              ? 'Take a photo, write on it, then swipe through the gallery.'
+              : 'Photos will show up here when someone adds them.'
+          }
         />
       ) : visible.length === 0 ? (
         <EmptyState
@@ -147,7 +151,7 @@ export function Gallery() {
           images={visible}
           memberId={member?.id || ''}
           onLike={(id) => { if (member) toggleGalleryLike(id, member.id) }}
-          onDelete={handleDelete}
+          onDelete={canUploadGallery ? handleDelete : undefined}
           onDownload={handleDownload}
         />
       )}

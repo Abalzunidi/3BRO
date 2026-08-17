@@ -9,7 +9,7 @@ interface ImageGalleryGridProps {
   images: GalleryImage[]
   memberId: string
   onLike: (id: string) => void
-  onDelete: (id: string) => void
+  onDelete?: (id: string) => void
   onDownload: (image: GalleryImage) => void
 }
 
@@ -172,14 +172,16 @@ export function ImageGalleryGrid({ images, memberId, onLike, onDelete, onDownloa
                   <Button size="icon" variant="secondary" onClick={() => onDownload(preview)} className="h-11 w-11 bg-white/90 hover:bg-white">
                     <Download className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="icon"
-                    variant="secondary"
-                    onClick={() => onDelete(preview.id)}
-                    className="h-11 w-11 bg-white/90 hover:bg-white text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {onDelete && (
+                    <Button
+                      size="icon"
+                      variant="secondary"
+                      onClick={() => onDelete(preview.id)}
+                      className="h-11 w-11 bg-white/90 hover:bg-white text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button size="icon" variant="secondary" onClick={() => setPage([null, 0])} className="h-11 w-11 bg-white/90 hover:bg-white">
                     <X className="h-4 w-4" />
                   </Button>

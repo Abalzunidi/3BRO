@@ -1,4 +1,4 @@
-import type { AppSection } from '@/types'
+import type { AppSection, Member } from '@/types'
 
 export const APP_SECTIONS: { id: AppSection; path: string; label: string }[] = [
   { id: 'dashboard', path: '/', label: 'Dashboard' },
@@ -11,6 +11,13 @@ export const APP_SECTIONS: { id: AppSection; path: string; label: string }[] = [
 ]
 
 export const ALL_SECTION_IDS: AppSection[] = APP_SECTIONS.map((s) => s.id)
+
+export function canUploadGallery(member: Member | null | undefined) {
+  if (!member) return false
+  if (member.role === 'admin') return true
+  if (!member.sections.includes('gallery')) return false
+  return member.galleryUpload !== false
+}
 
 export function pathToSection(pathname: string): AppSection | 'admin' | null {
   if (pathname === '/admin') return 'admin'

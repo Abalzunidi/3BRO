@@ -66,6 +66,8 @@ export interface Member {
   pin: string
   role: MemberRole
   sections: AppSection[]
+  /** When false, the member can view Gallery but cannot add or delete photos. Default true. */
+  galleryUpload?: boolean
 }
 
 export interface Payment {

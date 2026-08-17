@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useTrip } from '@/context/TripContext'
-import { ALL_SECTION_IDS, APP_SECTIONS, normalizePin } from '@/lib/sections'
+import { ALL_SECTION_IDS, APP_SECTIONS, canUploadGallery as memberCanUploadGallery, normalizePin } from '@/lib/sections'
 import type { AppSection, Member } from '@/types'
 
 const SESSION_KEY = '3bro-session-id'
@@ -13,6 +13,7 @@ interface AuthContextValue {
   logout: () => void
   setupAdmin: (name: string, pin: string) => string | null
   canAccess: (section: AppSection | 'admin') => boolean
+  canUploadGallery: boolean
   firstPath: string
 }
 
@@ -85,6 +86,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [member]
   )
 
+  const canUploadGallery = memberCanUploadGallery(member)
+
   const firstPath = useMemo(() => {
     if (!member) return '/'
     if (member.role === 'admin') return '/'
@@ -100,6 +103,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout,
     setupAdmin,
     canAccess,
+    canUploadGallery,
     firstPath,
   }
 
