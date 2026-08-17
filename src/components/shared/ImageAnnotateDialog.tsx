@@ -10,28 +10,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { PHOTO_FILTERS, photoFilterCss, type PhotoFilterId } from '@/lib/image'
+import { cn } from '@/lib/utils'
 
 interface ImageAnnotateDialogProps {
   file: File | null
   open: boolean
   saving?: boolean
+  initialFilter?: PhotoFilterId
   onClose: () => void
-  onSave: (caption: string) => void
+  onSave: (caption: string, filter: PhotoFilterId) => void
 }
 
 export function ImageAnnotateDialog({
   file,
   open,
   saving,
+  initialFilter = 'none',
   onClose,
   onSave,
 }: ImageAnnotateDialogProps) {
   const [caption, setCaption] = useState('')
+  const [filter, setFilter] = useState<PhotoFilterId>(initialFilter)
   const previewUrl = useMemo(() => (file ? URL.createObjectURL(file) : ''), [file])
 
   useEffect(() => {
     setCaption('')
-  }, [file])
+    setFilter(initialFilter)
+  }, [file, initialFilter])
 
   useEffect(() => {
     return () => {
@@ -45,13 +51,18 @@ export function ImageAnnotateDialog({
     <Dialog open={open} onOpenChange={(next) => { if (!next && !saving) onClose() }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Write on photo</DialogTitle>
-          <DialogDescription>The text is saved on the picture itself.</DialogDescription>
+          <DialogTitle>Edit photo</DialogTitle>
+          <DialogDescription>Pick a filter, then save. The photo is not flipped.</DialogDescription>
         </DialogHeader>
 
         {previewUrl && (
           <div className="relative overflow-hidden rounded-2xl bg-muted">
-            <img src={previewUrl} alt="" className="w-full max-h-[50vh] object-contain" />
+            <img
+              src={previewUrl}
+              alt=""
+              className="w-full max-h-[42vh] object-contain"
+              style={{ filter: photoFilterCss(filter), transform: 'none' }}
+            />
             {caption.trim() && (
               <div
                 className="absolute inset-x-0 bottom-0 bg-black/50 px-3 py-2.5 text-center text-white text-sm font-semibold leading-snug"
@@ -62,6 +73,34 @@ export function ImageAnnotateDialog({
             )}
           </div>
         )}
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {PHOTO_FILTERS.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => setFilter(item.id)}
+              className={cn(
+                'shrink-0 overflow-hidden rounded-2xl ring-2 transition-all touch-manipulation',
+                filter === item.id ? 'ring-primary' : 'ring-transparent opacity-80'
+              )}
+            >
+              {previewUrl ? (
+                <img
+                  src={previewUrl}
+                  alt=""
+                  className="h-14 w-14 object-cover"
+                  style={{ filter: photoFilterCss(item.id), transform: 'none' }}
+                />
+              ) : (
+                <span className="block h-14 w-14 bg-muted" />
+              )}
+              <span className="block bg-background/90 py-0.5 text-center text-[10px] font-medium">
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
 
         <div className="space-y-2">
           <Label htmlFor="photo-caption">Text on photo</Label>
@@ -77,10 +116,10 @@ export function ImageAnnotateDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onSave('')} disabled={saving}>
-            Skip
+          <Button variant="outline" onClick={() => onSave('', filter)} disabled={saving}>
+            Skip text
           </Button>
-          <Button onClick={() => onSave(caption.trim())} disabled={saving}>
+          <Button onClick={() => onSave(caption.trim(), filter)} disabled={saving}>
             {saving ? 'Saving…' : 'Save photo'}
           </Button>
         </DialogFooter>

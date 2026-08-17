@@ -1,3 +1,19 @@
+export const PHOTO_FILTERS = [
+  { id: 'none', label: 'Original', css: 'none' },
+  { id: 'vivid', label: 'Vivid', css: 'contrast(1.14) saturate(1.38)' },
+  { id: 'warm', label: 'Warm', css: 'sepia(0.28) saturate(1.22) hue-rotate(-12deg)' },
+  { id: 'cool', label: 'Cool', css: 'saturate(1.12) hue-rotate(14deg) brightness(1.04)' },
+  { id: 'mono', label: 'Mono', css: 'grayscale(1) contrast(1.12)' },
+  { id: 'vintage', label: 'Vintage', css: 'sepia(0.42) contrast(0.92) brightness(1.05) saturate(0.82)' },
+  { id: 'fade', label: 'Fade', css: 'contrast(0.86) brightness(1.1) saturate(0.72)' },
+] as const
+
+export type PhotoFilterId = (typeof PHOTO_FILTERS)[number]['id']
+
+export function photoFilterCss(id: PhotoFilterId | string | undefined) {
+  return PHOTO_FILTERS.find((f) => f.id === id)?.css || 'none'
+}
+
 function wrapCaptionLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number) {
   const words = text.split(/\s+/).filter(Boolean)
   const lines: string[] = []
@@ -62,73 +78,146 @@ function drawCaption(ctx: CanvasRenderingContext2D, text: string, width: number,
   })
 }
 
+function fitSize(width: number, height: number, maxEdge: number) {
+  const longest = Math.max(width, height, 1)
+  if (longest <= maxEdge) return { width, height }
+  const ratio = maxEdge / longest
+  return {
+    width: Math.max(1, Math.round(width * ratio)),
+    height: Math.max(1, Math.round(height * ratio)),
+  }
+}
+
 function canvasToJpeg(
   img: CanvasImageSource,
   width: number,
   height: number,
   quality: number,
-  caption = ''
+  caption = '',
+  filter: PhotoFilterId | string = 'none'
 ) {
   const canvas = document.createElement('canvas')
   canvas.width = Math.max(1, width)
   canvas.height = Math.max(1, height)
-  const ctx = canvas.getContext('2d')
+  const ctx = canvas.getContext('2d', { alpha: false })
   if (!ctx) throw new Error('No canvas')
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'medium'
+  ctx.filter = photoFilterCss(filter)
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  ctx.filter = 'none'
   if (caption.trim()) drawCaption(ctx, caption, canvas.width, canvas.height)
   return canvas.toDataURL('image/jpeg', quality)
 }
 
-async function sourceFromFile(file: File): Promise<{ width: number; height: number; source: CanvasImageSource; close?: () => void }> {
+async function sourceFromFile(file: File): Promise<{
+  width: number
+  height: number
+  source: CanvasImageSource
+  close?: () => void
+}> {
+  const oriented: ImageBitmapOptions = { imageOrientation: 'from-image' }
   try {
-    const bmp = await createImageBitmap(file)
+    const bmp = await createImageBitmap(file, oriented)
     return { width: bmp.width, height: bmp.height, source: bmp, close: () => bmp.close() }
   } catch {
-    const objectUrl = URL.createObjectURL(file)
-    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const el = new Image()
-      el.onload = () => resolve(el)
-      el.onerror = () => reject(new Error('Failed to load image'))
-      el.src = objectUrl
-    })
-    URL.revokeObjectURL(objectUrl)
-    return { width: image.naturalWidth || image.width, height: image.naturalHeight || image.height, source: image }
+    try {
+      const bmp = await createImageBitmap(file)
+      return { width: bmp.width, height: bmp.height, source: bmp, close: () => bmp.close() }
+    } catch {
+      const objectUrl = URL.createObjectURL(file)
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const el = new Image()
+        el.onload = () => resolve(el)
+        el.onerror = () => reject(new Error('Failed to load image'))
+        el.src = objectUrl
+      })
+      URL.revokeObjectURL(objectUrl)
+      return {
+        width: image.naturalWidth || image.width,
+        height: image.naturalHeight || image.height,
+        source: image,
+      }
+    }
   }
 }
 
-/** JPEG data URL small enough for one MantleDB entry (64 KB limit). */
-export async function fileToCloudDataUrl(file: File, maxBytes = 58_000, caption = ''): Promise<string> {
-  const loaded = await sourceFromFile(file)
+async function downscale(source: CanvasImageSource, width: number, height: number, maxEdge: number) {
+  const size = fitSize(width, height, maxEdge)
+  if (size.width === width && size.height === height) return { source, ...size, close: undefined as (() => void) | undefined }
   try {
-    let size = Math.min(1280, Math.max(loaded.width, loaded.height) || 1280)
-    let quality = 0.72
-    const scale = () => {
-      const ratio = size / Math.max(loaded.width, loaded.height, 1)
-      return canvasToJpeg(
-        loaded.source,
-        Math.max(1, Math.round(loaded.width * ratio)),
-        Math.max(1, Math.round(loaded.height * ratio)),
-        quality,
-        caption
-      )
+    const bmp = await createImageBitmap(source, {
+      resizeWidth: size.width,
+      resizeHeight: size.height,
+      resizeQuality: 'medium',
+    })
+    return { source: bmp, width: bmp.width, height: bmp.height, close: () => bmp.close() }
+  } catch {
+    return { source, ...size, close: undefined }
+  }
+}
+
+function payloadBytes(url: string) {
+  return url.length + 16
+}
+
+/** JPEG data URL small enough for one MantleDB entry (64 KB limit). Never mirrors the photo. */
+export async function fileToCloudDataUrl(
+  file: File,
+  maxBytes = 58_000,
+  caption = '',
+  filter: PhotoFilterId | string = 'none'
+): Promise<string> {
+  const loaded = await sourceFromFile(file)
+  let resized: { source: CanvasImageSource; width: number; height: number; close?: () => void } | null = null
+  try {
+    let maxEdge = Math.min(960, Math.max(loaded.width, loaded.height) || 960)
+    let quality = 0.58
+    resized = await downscale(loaded.source, loaded.width, loaded.height, maxEdge)
+
+    const encode = () =>
+      canvasToJpeg(resized!.source, resized!.width, resized!.height, quality, caption, filter)
+
+    let url = encode()
+
+    while (payloadBytes(url) > maxBytes && (maxEdge > 280 || quality > 0.3)) {
+      if (quality > 0.38) {
+        quality = Math.max(0.3, quality - 0.1)
+      } else {
+        maxEdge = Math.max(280, Math.floor(maxEdge * 0.78))
+        resized.close?.()
+        resized = await downscale(loaded.source, loaded.width, loaded.height, maxEdge)
+      }
+      url = encode()
     }
 
-    let url = scale()
-
-    while (new Blob([url]).size > maxBytes && (size > 280 || quality > 0.32)) {
-      if (quality > 0.4) quality = Math.max(0.32, quality - 0.12)
-      else size = Math.max(280, Math.floor(size * 0.75))
-      url = scale()
-    }
-
-    if (new Blob([JSON.stringify({ url })]).size > 64_000) {
+    if (payloadBytes(url) > 63_000) {
       quality = 0.28
-      size = 240
-      url = scale()
+      resized.close?.()
+      resized = await downscale(loaded.source, loaded.width, loaded.height, 240)
+      url = encode()
     }
 
     return url
   } finally {
+    resized?.close?.()
     loaded.close?.()
   }
+}
+
+/** Grab the live camera frame as-is (no horizontal flip). */
+export async function snapshotVideo(video: HTMLVideoElement): Promise<File> {
+  const width = video.videoWidth
+  const height = video.videoHeight
+  if (!width || !height) throw new Error('Camera is not ready')
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d', { alpha: false })
+  if (!ctx) throw new Error('No canvas')
+  ctx.drawImage(video, 0, 0, width, height)
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob((next) => (next ? resolve(next) : reject(new Error('Could not capture'))), 'image/jpeg', 0.92)
+  })
+  return new File([blob], `photo-${Date.now()}.jpg`, { type: 'image/jpeg' })
 }

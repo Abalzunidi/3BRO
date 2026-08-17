@@ -1,21 +1,33 @@
-import { useRef } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { Camera, Images } from 'lucide-react'
+import { CameraCapture } from '@/components/shared/CameraCapture'
+import { type PhotoFilterId } from '@/lib/image'
 import { cn } from '@/lib/utils'
 
 interface ImageUploadProps {
-  onUpload: (files: FileList) => void
+  onUpload: (files: File[], meta?: { filter?: PhotoFilterId }) => void
   className?: string
   multiple?: boolean
   compact?: boolean
 }
 
+function toFiles(list: FileList | null) {
+  return list ? Array.from(list).filter((file) => !file.type || file.type.startsWith('image/')) : []
+}
+
 export function ImageUpload({ onUpload, className, multiple = true, compact = false }: ImageUploadProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const cameraRef = useRef<HTMLInputElement>(null)
+  const [cameraOpen, setCameraOpen] = useState(false)
 
-  const pick = (list: FileList | null) => {
-    if (list?.length) onUpload(list)
+  const pick = (list: FileList | null, filter?: PhotoFilterId) => {
+    const files = toFiles(list)
+    if (files.length) onUpload(files, filter ? { filter } : undefined)
   }
+
+  const openNativeCamera = useCallback(() => {
+    cameraRef.current?.click()
+  }, [])
 
   const card = compact
     ? 'flex items-center gap-3 rounded-2xl border border-border bg-card px-4 py-3.5 cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-colors touch-manipulation text-left'
@@ -27,14 +39,14 @@ export function ImageUpload({ onUpload, className, multiple = true, compact = fa
 
   return (
     <div className={cn(compact ? 'grid gap-2 sm:grid-cols-2' : 'grid gap-3 sm:grid-cols-2', className)}>
-      <button type="button" onClick={() => cameraRef.current?.click()} className={card}>
+      <button type="button" onClick={() => setCameraOpen(true)} className={card}>
         <div className={iconBox}>
           <Camera className={compact ? 'h-5 w-5' : 'h-7 w-7'} />
         </div>
         <div>
           <p className="font-medium">Take photo</p>
-          {!compact && <p className="text-sm text-muted-foreground text-center mt-1">Write on it after you shoot</p>}
-          {compact && <p className="text-xs text-muted-foreground">Write on it after you shoot</p>}
+          {!compact && <p className="text-sm text-muted-foreground text-center mt-1">Fast camera, live filters</p>}
+          {compact && <p className="text-xs text-muted-foreground">Camera + filters</p>}
         </div>
       </button>
 
@@ -79,6 +91,13 @@ export function ImageUpload({ onUpload, className, multiple = true, compact = fa
           pick(e.target.files)
           e.target.value = ''
         }}
+      />
+
+      <CameraCapture
+        open={cameraOpen}
+        onClose={() => setCameraOpen(false)}
+        onFallback={openNativeCamera}
+        onCapture={(file, filter) => onUpload([file], { filter })}
       />
     </div>
   )

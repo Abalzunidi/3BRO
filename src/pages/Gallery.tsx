@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button'
 import { useTrip } from '@/context/TripContext'
 import { useAuth } from '@/context/AuthContext'
 import { useToast } from '@/context/ToastContext'
-import { fileToCloudDataUrl } from '@/lib/image'
+import { fileToCloudDataUrl, type PhotoFilterId } from '@/lib/image'
 
 type Filter = 'all' | 'captioned' | 'liked'
 
@@ -21,6 +21,7 @@ export function Gallery() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState<Filter>('all')
   const [pendingFiles, setPendingFiles] = useState<File[]>([])
+  const [pendingFilter, setPendingFilter] = useState<PhotoFilterId>('none')
   const [saving, setSaving] = useState(false)
 
   const pending = pendingFiles[0] || null
@@ -35,13 +36,13 @@ export function Gallery() {
     })
   }, [gallery, query, filter])
 
-  const uploadFiles = async (files: File[], caption = '') => {
+  const uploadFiles = async (files: File[], caption = '', photoFilter: PhotoFilterId = 'none') => {
     setSaving(true)
     try {
       const images = await Promise.all(
         files.map(async (file, i) => ({
           name: file.name || `photo-${Date.now()}-${i}.jpg`,
-          url: await fileToCloudDataUrl(file, 58_000, caption),
+          url: await fileToCloudDataUrl(file, 58_000, caption, photoFilter),
           createdAt: new Date().toISOString(),
           ...(caption ? { caption } : {}),
         }))
@@ -49,6 +50,7 @@ export function Gallery() {
       addGalleryImages(images)
       toast(`${images.length} image${images.length > 1 ? 's' : ''} uploaded`)
       setPendingFiles([])
+      setPendingFilter('none')
     } catch {
       toast('Could not upload image', 'error')
     } finally {
@@ -56,22 +58,22 @@ export function Gallery() {
     }
   }
 
-  const handleUpload = (files: FileList) => {
-    const images = Array.from(files).filter((file) => !file.type || file.type.startsWith('image/'))
-    if (!images.length) {
+  const handleUpload = (files: File[], meta?: { filter?: PhotoFilterId }) => {
+    if (!files.length) {
       toast('Choose an image file', 'error')
       return
     }
-    if (images.length === 1) {
-      setPendingFiles(images)
+    if (files.length === 1) {
+      setPendingFilter(meta?.filter || 'none')
+      setPendingFiles(files)
       return
     }
-    void uploadFiles(images)
+    void uploadFiles(files)
   }
 
-  const savePending = (caption: string) => {
+  const savePending = (caption: string, photoFilter: PhotoFilterId) => {
     if (!pendingFiles.length) return
-    void uploadFiles(pendingFiles, caption)
+    void uploadFiles(pendingFiles, caption, photoFilter)
   }
 
   const handleDownload = (image: { name: string; url: string }) => {
@@ -134,7 +136,7 @@ export function Gallery() {
           title={canUploadGallery ? 'Upload your travel photos' : 'No photos yet'}
           description={
             canUploadGallery
-              ? 'Take a photo, write on it, then swipe through the gallery.'
+              ? 'Shoot or pick a photo, add a filter, then swipe the gallery.'
               : 'Photos will show up here when someone adds them.'
           }
         />
@@ -158,7 +160,8 @@ export function Gallery() {
         file={pending}
         open={Boolean(pending)}
         saving={saving}
-        onClose={() => { if (!saving) setPendingFiles([]) }}
+        initialFilter={pendingFilter}
+        onClose={() => { if (!saving) { setPendingFiles([]); setPendingFilter('none') } }}
         onSave={savePending}
       />
     </div>
