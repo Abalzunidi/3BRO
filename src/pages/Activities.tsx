@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/select'
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
-import { fileToCompressedDataUrl } from '@/lib/image'
+import { fileToCloudDataUrl } from '@/lib/image'
 import { formatCurrency } from '@/lib/utils'
 import type { Activity, ActivityStatus } from '@/types'
 import { motion } from 'framer-motion'
@@ -81,7 +81,7 @@ export function Activities() {
   const handleImage = (files: FileList | null) => {
     const file = files?.[0]
     if (!file) return
-    fileToCompressedDataUrl(file)
+    fileToCloudDataUrl(file)
       .then((url) => setForm((f) => ({ ...f, image: url })))
       .catch(() => toast('Could not upload image', 'error'))
   }

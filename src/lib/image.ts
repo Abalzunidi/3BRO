@@ -1,33 +1,67 @@
-function readAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result || ''))
-    reader.onerror = () => reject(new Error('Failed to read image'))
-    reader.readAsDataURL(file)
-  })
+function canvasToJpeg(img: CanvasImageSource, width: number, height: number, quality: number) {
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, width)
+  canvas.height = Math.max(1, height)
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('No canvas')
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/jpeg', quality)
 }
 
-/** Shrink photos so they fit localStorage / remote JSON instead of getting dropped. */
-export async function fileToCompressedDataUrl(file: File, maxSize = 1280, quality = 0.72): Promise<string> {
-  const objectUrl = URL.createObjectURL(file)
+async function sourceFromFile(file: File): Promise<{ width: number; height: number; source: CanvasImageSource; close?: () => void }> {
   try {
-    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-      const image = new Image()
-      image.onload = () => resolve(image)
-      image.onerror = () => reject(new Error('Failed to load image'))
-      image.src = objectUrl
-    })
-    const scale = Math.min(1, maxSize / Math.max(img.width || 1, img.height || 1))
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.max(1, Math.round(img.width * scale))
-    canvas.height = Math.max(1, Math.round(img.height * scale))
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return readAsDataUrl(file)
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
-    return canvas.toDataURL('image/jpeg', quality)
+    const bmp = await createImageBitmap(file)
+    return { width: bmp.width, height: bmp.height, source: bmp, close: () => bmp.close() }
   } catch {
-    return readAsDataUrl(file)
-  } finally {
+    const objectUrl = URL.createObjectURL(file)
+    const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new Image()
+      el.onload = () => resolve(el)
+      el.onerror = () => reject(new Error('Failed to load image'))
+      el.src = objectUrl
+    })
     URL.revokeObjectURL(objectUrl)
+    return { width: image.naturalWidth || image.width, height: image.naturalHeight || image.height, source: image }
+  }
+}
+
+/** JPEG data URL small enough for one MantleDB entry (64 KB limit). */
+export async function fileToCloudDataUrl(file: File, maxBytes = 58_000): Promise<string> {
+  const loaded = await sourceFromFile(file)
+  try {
+    let size = Math.min(1280, Math.max(loaded.width, loaded.height) || 1280)
+    let quality = 0.72
+    let url = canvasToJpeg(
+      loaded.source,
+      Math.max(1, Math.round(loaded.width * (size / Math.max(loaded.width, loaded.height, 1)))),
+      Math.max(1, Math.round(loaded.height * (size / Math.max(loaded.width, loaded.height, 1)))),
+      quality
+    )
+
+    const scale = () => {
+      const ratio = size / Math.max(loaded.width, loaded.height, 1)
+      return canvasToJpeg(
+        loaded.source,
+        Math.max(1, Math.round(loaded.width * ratio)),
+        Math.max(1, Math.round(loaded.height * ratio)),
+        quality
+      )
+    }
+
+    while (new Blob([url]).size > maxBytes && (size > 280 || quality > 0.32)) {
+      if (quality > 0.4) quality = Math.max(0.32, quality - 0.12)
+      else size = Math.max(280, Math.floor(size * 0.75))
+      url = scale()
+    }
+
+    if (new Blob([JSON.stringify({ url })]).size > 64_000) {
+      quality = 0.28
+      size = 240
+      url = scale()
+    }
+
+    return url
+  } finally {
+    loaded.close?.()
   }
 }

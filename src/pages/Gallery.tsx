@@ -4,7 +4,7 @@ import { ImageUpload } from '@/components/shared/ImageUpload'
 import { ImageGalleryGrid } from '@/components/shared/ImageGalleryGrid'
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
-import { fileToCompressedDataUrl } from '@/lib/image'
+import { fileToCloudDataUrl } from '@/lib/image'
 import { motion } from 'framer-motion'
 
 export function Gallery() {
@@ -16,7 +16,7 @@ export function Gallery() {
       .filter((file) => !file.type || file.type.startsWith('image/'))
       .map(async (file) => ({
         name: file.name,
-        url: await fileToCompressedDataUrl(file),
+        url: await fileToCloudDataUrl(file),
         createdAt: new Date().toISOString(),
       }))
 

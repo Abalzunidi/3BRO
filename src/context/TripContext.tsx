@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from 'react'
 import { generateId } from '@/lib/utils'
-import { fetchTripState, saveTripState } from '@/lib/api'
+import { fetchTripState, saveTripState, deleteMedia, stripMedia, hydrateMedia } from '@/lib/api'
 import type {
   Activity,
   Expense,
@@ -107,7 +107,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
 
   const persistLocal = (next: TripState) => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stripMedia(next)))
     } catch {
       // QuotaExceeded: keep in-memory state; remote save still runs.
     }
@@ -148,7 +148,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
         applyRemote(remote)
       } catch {
         if (cancelled) return
-        setState(loadLocal())
+        setState(await hydrateMedia(loadLocal()))
         setSynced(false)
       } finally {
         if (!cancelled) {
@@ -257,6 +257,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const deleteActivity = useCallback((id: string) => {
+    void deleteMedia('activity', id)
     setState((s) => ({
       ...s,
       activities: s.activities.filter((a) => a.id !== id),
@@ -306,6 +307,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const deleteGalleryImage = useCallback((id: string) => {
+    void deleteMedia('gallery', id)
     setState((s) => ({
       ...s,
       gallery: s.gallery.filter((g) => g.id !== id),
