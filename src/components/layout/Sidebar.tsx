@@ -5,20 +5,25 @@ import {
   CalendarDays,
   MapPinned,
   Wallet,
+  Banknote,
   CheckSquare,
   Images,
+  Shield,
   X,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuth } from '@/context/AuthContext'
+import { APP_SECTIONS } from '@/lib/sections'
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/schedule', icon: CalendarDays, label: 'Schedule' },
-  { to: '/activities', icon: MapPinned, label: 'Activities' },
-  { to: '/budget', icon: Wallet, label: 'Budget' },
-  { to: '/tasks', icon: CheckSquare, label: 'Tasks' },
-  { to: '/gallery', icon: Images, label: 'Gallery' },
-]
+const icons = {
+  dashboard: LayoutDashboard,
+  schedule: CalendarDays,
+  activities: MapPinned,
+  budget: Wallet,
+  payments: Banknote,
+  tasks: CheckSquare,
+  gallery: Images,
+}
 
 interface SidebarProps {
   open: boolean
@@ -26,6 +31,9 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open, onClose }: SidebarProps) {
+  const { canAccess, isAdmin, member, logout } = useAuth()
+  const visible = APP_SECTIONS.filter((item) => canAccess(item.id))
+
   const content = (
     <div className="flex h-full flex-col pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--sidebar-border)]">
@@ -46,11 +54,31 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
+        {visible.map((item) => {
+          const Icon = icons[item.id]
+          return (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === '/'}
+              onClick={onClose}
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-3 rounded-2xl px-3.5 py-3.5 text-sm font-medium transition-all duration-200 touch-manipulation min-h-12',
+                  isActive
+                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/25'
+                    : 'text-muted-foreground hover:bg-[var(--sidebar-accent)] hover:text-foreground'
+                )
+              }
+            >
+              <Icon className="h-5 w-5 shrink-0" />
+              {item.label}
+            </NavLink>
+          )
+        })}
+        {isAdmin && (
           <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.to === '/'}
+            to="/admin"
             onClick={onClose}
             className={({ isActive }) =>
               cn(
@@ -61,13 +89,28 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               )
             }
           >
-            <item.icon className="h-5 w-5 shrink-0" />
-            {item.label}
+            <Shield className="h-5 w-5 shrink-0" />
+            Admin
           </NavLink>
-        ))}
+        )}
       </nav>
 
-      <div className="px-5 py-4 border-t border-[var(--sidebar-border)]">
+      <div className="px-5 py-4 border-t border-[var(--sidebar-border)] space-y-2">
+        {member && (
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs text-muted-foreground truncate">{member.name}</p>
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                logout()
+              }}
+              className="text-xs text-primary font-medium cursor-pointer"
+            >
+              Logout
+            </button>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground text-center">3bro © {new Date().getFullYear()}</p>
       </div>
     </div>
@@ -75,12 +118,10 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Desktop */}
       <aside className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0 bg-[var(--sidebar)] border-r border-[var(--sidebar-border)] z-30">
         {content}
       </aside>
 
-      {/* Mobile overlay */}
       <AnimatePresence>
         {open && (
           <>

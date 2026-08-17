@@ -55,6 +55,23 @@ export interface GalleryImage {
   createdAt: string
 }
 
+export type MemberRole = 'admin' | 'member'
+export type AppSection = 'dashboard' | 'schedule' | 'activities' | 'budget' | 'payments' | 'tasks' | 'gallery'
+
+export interface Member {
+  id: string
+  name: string
+  pin: string
+  role: MemberRole
+  sections: AppSection[]
+}
+
+export interface Payment {
+  id: string
+  name: string
+  amount: number
+}
+
 export interface TripState {
   trip: TripInfo
   schedule: ScheduleActivity[]
@@ -62,4 +79,6 @@ export interface TripState {
   expenses: Expense[]
   tasks: Task[]
   gallery: GalleryImage[]
+  members: Member[]
+  payments: Payment[]
 }

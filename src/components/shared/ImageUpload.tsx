@@ -49,7 +49,11 @@ export function ImageUpload({ onUpload, className, multiple = true }: ImageUploa
         accept="image/*"
         multiple={multiple}
         className="hidden"
-        onChange={(e) => e.target.files && onUpload(e.target.files)}
+        onClick={(e) => e.stopPropagation()}
+        onChange={(e) => {
+          if (e.target.files?.length) onUpload(e.target.files)
+          e.target.value = ''
+        }}
       />
     </motion.div>
   )

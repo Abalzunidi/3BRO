@@ -18,12 +18,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Calendar as CalendarWidget } from '@/components/shared/Calendar'
 import { useTrip } from '@/context/TripContext'
+import { useAuth } from '@/context/AuthContext'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { StatusBadge } from '@/components/shared/StatusBadge'
 import { motion } from 'framer-motion'
 
 export function Dashboard() {
   const { trip, schedule, activities, progress, totalSpent } = useTrip()
+  const { isAdmin } = useAuth()
   const [calDate, setCalDate] = useState<Date | undefined>()
 
   const hasTripInfo = trip.name || trip.destination || trip.travelDate
@@ -213,7 +215,7 @@ export function Dashboard() {
         <CalendarWidget selected={calDate} onSelect={setCalDate} markedDates={markedDates} />
       </div>
 
-      {!hasTripInfo && (
+      {isAdmin && !hasTripInfo && (
         <div className="flex justify-center">
           <Button
             variant="secondary"

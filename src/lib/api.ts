@@ -17,6 +17,8 @@ const emptyState: TripState = {
   expenses: [],
   tasks: [],
   gallery: [],
+  members: [],
+  payments: [],
 }
 
 function normalize(data: Partial<TripState> | null | undefined): TripState {
@@ -27,6 +29,8 @@ function normalize(data: Partial<TripState> | null | undefined): TripState {
     expenses: data?.expenses || [],
     tasks: data?.tasks || [],
     gallery: data?.gallery || [],
+    members: data?.members || [],
+    payments: data?.payments || [],
   }
 }
 

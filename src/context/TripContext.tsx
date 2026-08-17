@@ -14,6 +14,8 @@ import type {
   Activity,
   Expense,
   GalleryImage,
+  Member,
+  Payment,
   ScheduleActivity,
   Task,
   TripInfo,
@@ -37,6 +39,8 @@ const defaultState: TripState = {
   expenses: [],
   tasks: [],
   gallery: [],
+  members: [],
+  payments: [],
 }
 
 interface TripContextValue {
@@ -46,6 +50,8 @@ interface TripContextValue {
   expenses: Expense[]
   tasks: Task[]
   gallery: GalleryImage[]
+  members: Member[]
+  payments: Payment[]
   loading: boolean
   synced: boolean
   updateTrip: (info: Partial<TripInfo>) => void
@@ -63,6 +69,14 @@ interface TripContextValue {
   deleteTask: (id: string) => void
   addGalleryImages: (images: Omit<GalleryImage, 'id'>[]) => void
   deleteGalleryImage: (id: string) => void
+  addMember: (member: Omit<Member, 'id'>) => Member
+  updateMember: (id: string, data: Partial<Member>) => void
+  deleteMember: (id: string) => void
+  addPayment: (payment: Omit<Payment, 'id'>) => void
+  adjustPayment: (id: string, delta: number) => void
+  setPaymentAmount: (id: string, amount: number) => void
+  deletePayment: (id: string) => void
+  totalPaid: number
   totalSpent: number
   remainingBudget: number
   progress: number
@@ -74,7 +88,8 @@ function loadLocal(): TripState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return defaultState
-    return { ...defaultState, ...JSON.parse(raw) }
+    const parsed = JSON.parse(raw) as Partial<TripState>
+    return { ...defaultState, ...parsed, members: parsed.members || [], payments: parsed.payments || [] }
   } catch {
     return defaultState
   }
@@ -85,14 +100,24 @@ export function TripProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [synced, setSynced] = useState(false)
   const skipSave = useRef(true)
+  const dirtyRef = useRef(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const stateRef = useRef(state)
   stateRef.current = state
+
+  const persistLocal = (next: TripState) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+    } catch {
+      // QuotaExceeded: keep in-memory state; remote save still runs.
+    }
+  }
 
   useEffect(() => {
     let cancelled = false
 
     function applyRemote(remote: TripState) {
+      if (dirtyRef.current) return
       const next: TripState = {
         trip: { ...emptyTrip, ...remote.trip },
         schedule: remote.schedule || [],
@@ -100,6 +125,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
         expenses: remote.expenses || [],
         tasks: remote.tasks || [],
         gallery: remote.gallery || [],
+        members: remote.members || [],
+        payments: remote.payments || [],
       }
       const same = JSON.stringify(next) === JSON.stringify(stateRef.current)
       if (same) {
@@ -110,11 +137,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
       skipSave.current = true
       setState(next)
       stateRef.current = next
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(next))
+      persistLocal(next)
       setSynced(true)
-      queueMicrotask(() => {
-        skipSave.current = false
-      })
     }
 
     async function init() {
@@ -154,9 +178,14 @@ export function TripProvider({ children }: { children: ReactNode }) {
   }, [])
 
   useEffect(() => {
-    if (loading || skipSave.current) return
+    if (loading) return
+    if (skipSave.current) {
+      skipSave.current = false
+      return
+    }
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    dirtyRef.current = true
+    persistLocal(state)
 
     if (saveTimer.current) clearTimeout(saveTimer.current)
     const snapshot = state
@@ -166,6 +195,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       if (JSON.stringify(snapshot) !== JSON.stringify(stateRef.current)) return
       try {
         await saveTripState(stateRef.current)
+        dirtyRef.current = false
         setSynced(true)
       } catch {
         setSynced(false)
@@ -282,9 +312,66 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const addMember = useCallback((member: Omit<Member, 'id'>) => {
+    const next: Member = { ...member, id: generateId() }
+    setState((s) => ({ ...s, members: [...s.members, next] }))
+    return next
+  }, [])
+
+  const updateMember = useCallback((id: string, data: Partial<Member>) => {
+    setState((s) => ({
+      ...s,
+      members: s.members.map((m) => (m.id === id ? { ...m, ...data } : m)),
+    }))
+  }, [])
+
+  const deleteMember = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      members: s.members.filter((m) => m.id !== id),
+    }))
+  }, [])
+
+  const addPayment = useCallback((payment: Omit<Payment, 'id'>) => {
+    setState((s) => ({
+      ...s,
+      payments: [...s.payments, { ...payment, id: generateId(), amount: Math.max(0, payment.amount) }],
+    }))
+  }, [])
+
+  const adjustPayment = useCallback((id: string, delta: number) => {
+    setState((s) => ({
+      ...s,
+      payments: s.payments.map((p) =>
+        p.id === id ? { ...p, amount: Math.max(0, Math.round((p.amount + delta) * 100) / 100) } : p
+      ),
+    }))
+  }, [])
+
+  const setPaymentAmount = useCallback((id: string, amount: number) => {
+    setState((s) => ({
+      ...s,
+      payments: s.payments.map((p) =>
+        p.id === id ? { ...p, amount: Math.max(0, Math.round(amount * 100) / 100) } : p
+      ),
+    }))
+  }, [])
+
+  const deletePayment = useCallback((id: string) => {
+    setState((s) => ({
+      ...s,
+      payments: s.payments.filter((p) => p.id !== id),
+    }))
+  }, [])
+
   const totalSpent = useMemo(
     () => state.expenses.reduce((sum, e) => sum + e.amount, 0),
     [state.expenses]
+  )
+
+  const totalPaid = useMemo(
+    () => state.payments.reduce((sum, p) => sum + p.amount, 0),
+    [state.payments]
   )
 
   const remainingBudget = useMemo(
@@ -310,6 +397,8 @@ export function TripProvider({ children }: { children: ReactNode }) {
     expenses: state.expenses,
     tasks: state.tasks,
     gallery: state.gallery,
+    members: state.members,
+    payments: state.payments,
     loading,
     synced,
     updateTrip,
@@ -327,7 +416,15 @@ export function TripProvider({ children }: { children: ReactNode }) {
     deleteTask,
     addGalleryImages,
     deleteGalleryImage,
+    addMember,
+    updateMember,
+    deleteMember,
+    addPayment,
+    adjustPayment,
+    setPaymentAmount,
+    deletePayment,
     totalSpent,
+    totalPaid,
     remainingBudget,
     progress,
   }

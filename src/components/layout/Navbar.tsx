@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cloud, CloudOff, Menu, Moon, Search, Settings, Sun } from 'lucide-react'
+import { Cloud, CloudOff, LogOut, Menu, Moon, Search, Settings, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/shared/SearchInput'
 import {
@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { useTheme } from '@/context/ThemeContext'
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
+import { useAuth } from '@/context/AuthContext'
 
 interface NavbarProps {
   onMenuClick: () => void
@@ -23,6 +24,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
   const { theme, toggleTheme } = useTheme()
   const { trip, updateTrip, synced, loading } = useTrip()
   const { toast } = useToast()
+  const { isAdmin, logout } = useAuth()
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [form, setForm] = useState(trip)
@@ -103,6 +105,7 @@ export function Navbar({ onMenuClick }: NavbarProps) {
           >
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>
+          {isAdmin && (
           <Button
             variant="ghost"
             size="icon"
@@ -111,6 +114,16 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             aria-label="Settings"
           >
             <Settings className="h-5 w-5" />
+          </Button>
+          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-12 w-12 touch-manipulation"
+            onClick={logout}
+            aria-label="Logout"
+          >
+            <LogOut className="h-5 w-5" />
           </Button>
         </div>
       </header>

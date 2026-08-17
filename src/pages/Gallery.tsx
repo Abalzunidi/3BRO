@@ -4,6 +4,7 @@ import { ImageUpload } from '@/components/shared/ImageUpload'
 import { ImageGalleryGrid } from '@/components/shared/ImageGalleryGrid'
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
+import { fileToCompressedDataUrl } from '@/lib/image'
 import { motion } from 'framer-motion'
 
 export function Gallery() {
@@ -11,24 +12,24 @@ export function Gallery() {
   const { toast } = useToast()
 
   const handleUpload = (files: FileList) => {
-    const readers = Array.from(files).map(
-      (file) =>
-        new Promise<{ name: string; url: string; createdAt: string }>((resolve) => {
-          const reader = new FileReader()
-          reader.onload = () =>
-            resolve({
-              name: file.name,
-              url: reader.result as string,
-              createdAt: new Date().toISOString(),
-            })
-          reader.readAsDataURL(file)
-        })
-    )
+    const jobs = Array.from(files)
+      .filter((file) => !file.type || file.type.startsWith('image/'))
+      .map(async (file) => ({
+        name: file.name,
+        url: await fileToCompressedDataUrl(file),
+        createdAt: new Date().toISOString(),
+      }))
 
-    Promise.all(readers).then((images) => {
-      addGalleryImages(images)
-      toast(`${images.length} image${images.length > 1 ? 's' : ''} uploaded`)
-    })
+    Promise.all(jobs)
+      .then((images) => {
+        if (!images.length) {
+          toast('Choose an image file', 'error')
+          return
+        }
+        addGalleryImages(images)
+        toast(`${images.length} image${images.length > 1 ? 's' : ''} uploaded`)
+      })
+      .catch(() => toast('Could not upload image', 'error'))
   }
 
   const handleDownload = (image: { name: string; url: string }) => {

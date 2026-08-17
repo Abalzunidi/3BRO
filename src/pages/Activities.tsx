@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/select'
 import { useTrip } from '@/context/TripContext'
 import { useToast } from '@/context/ToastContext'
+import { fileToCompressedDataUrl } from '@/lib/image'
 import { formatCurrency } from '@/lib/utils'
 import type { Activity, ActivityStatus } from '@/types'
 import { motion } from 'framer-motion'
@@ -80,9 +81,9 @@ export function Activities() {
   const handleImage = (files: FileList | null) => {
     const file = files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => setForm((f) => ({ ...f, image: reader.result as string }))
-    reader.readAsDataURL(file)
+    fileToCompressedDataUrl(file)
+      .then((url) => setForm((f) => ({ ...f, image: url })))
+      .catch(() => toast('Could not upload image', 'error'))
   }
 
   const handleSave = () => {
@@ -202,7 +203,14 @@ export function Activities() {
 
       {/* Add/Edit Form */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent
+          className="max-w-md"
+          onFocusOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => {
+            const target = e.target as HTMLElement | null
+            if (target?.closest?.('input[type="file"]')) e.preventDefault()
+          }}
+        >
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Activity' : 'Add Activity'}</DialogTitle>
             <DialogDescription>
@@ -222,7 +230,16 @@ export function Activities() {
                   <span className="text-sm text-muted-foreground">Click to upload image</span>
                 )}
               </div>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => handleImage(e.target.files)} />
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  handleImage(e.target.files)
+                  e.target.value = ''
+                }}
+              />
             </div>
             <div className="space-y-2">
               <Label>Activity Name</Label>

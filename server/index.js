@@ -28,6 +28,8 @@ const emptyState = {
   expenses: [],
   tasks: [],
   gallery: [],
+  members: [],
+  payments: [],
 }
 
 const tripDataSchema = new mongoose.Schema(
@@ -45,6 +47,8 @@ const tripDataSchema = new mongoose.Schema(
     expenses: { type: Array, default: [] },
     tasks: { type: Array, default: [] },
     gallery: { type: Array, default: [] },
+    members: { type: Array, default: [] },
+    payments: { type: Array, default: [] },
   },
   { timestamps: true }
 )
@@ -91,6 +95,8 @@ app.get('/api/state', async (_req, res) => {
       expenses: doc.expenses || [],
       tasks: doc.tasks || [],
       gallery: doc.gallery || [],
+      members: doc.members || [],
+      payments: doc.payments || [],
       updatedAt: doc.updatedAt,
     })
   } catch (err) {
@@ -101,7 +107,7 @@ app.get('/api/state', async (_req, res) => {
 
 app.put('/api/state', async (req, res) => {
   try {
-    const { trip, schedule, activities, expenses, tasks, gallery } = req.body || {}
+    const { trip, schedule, activities, expenses, tasks, gallery, members, payments } = req.body || {}
     const doc = await TripData.findOneAndUpdate(
       { key: 'default' },
       {
@@ -112,6 +118,8 @@ app.put('/api/state', async (req, res) => {
         expenses: expenses ?? [],
         tasks: tasks ?? [],
         gallery: gallery ?? [],
+        members: members ?? [],
+        payments: payments ?? [],
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     ).lean()
@@ -123,6 +131,8 @@ app.put('/api/state', async (req, res) => {
       expenses: doc.expenses,
       tasks: doc.tasks,
       gallery: doc.gallery,
+      members: doc.members,
+      payments: doc.payments,
       updatedAt: doc.updatedAt,
     })
   } catch (err) {
