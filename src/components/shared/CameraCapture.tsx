@@ -117,7 +117,7 @@ export function CameraCapture({ open, onClose, onCapture, onFallback }: CameraCa
           className="h-full w-full object-cover"
           style={{
             filter: photoFilterCss(filter),
-            transform: facing === 'user' ? 'scaleX(-1)' : undefined,
+            transform: facing === 'environment' ? 'scaleX(-1)' : 'none',
           }}
           playsInline
           muted
