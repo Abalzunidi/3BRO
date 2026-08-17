@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Cloud, CloudOff, LogOut, Menu, Moon, Search, Settings, Sun } from 'lucide-react'
+import { Cloud, CloudOff, LogOut, Menu, Moon, RefreshCw, Search, Settings, Sun } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/shared/SearchInput'
 import {
@@ -22,12 +22,21 @@ interface NavbarProps {
 
 export function Navbar({ onMenuClick }: NavbarProps) {
   const { theme, toggleTheme } = useTheme()
-  const { trip, updateTrip, synced, loading } = useTrip()
+  const { trip, updateTrip, synced, loading, refresh } = useTrip()
   const { toast } = useToast()
   const { isAdmin, logout } = useAuth()
   const [searchOpen, setSearchOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
   const [form, setForm] = useState(trip)
+
+  const handleRefresh = async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    const ok = await refresh()
+    setRefreshing(false)
+    toast(ok ? 'Updated' : 'Could not update', ok ? 'success' : 'error')
+  }
 
   const openSettings = () => {
     setForm(trip)
@@ -87,6 +96,17 @@ export function Navbar({ onMenuClick }: NavbarProps) {
               </>
             )}
           </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-12 w-12 touch-manipulation"
+            onClick={handleRefresh}
+            disabled={refreshing || loading}
+            aria-label="Refresh"
+            title="Refresh"
+          >
+            <RefreshCw className={`h-5 w-5 ${refreshing ? 'animate-spin' : ''}`} />
+          </Button>
           <Button
             variant="ghost"
             size="icon"

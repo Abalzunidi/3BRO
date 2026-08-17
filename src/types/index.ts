@@ -53,6 +53,8 @@ export interface GalleryImage {
   name: string
   url: string
   createdAt: string
+  caption?: string
+  likedBy?: string[]
 }
 
 export type MemberRole = 'admin' | 'member'

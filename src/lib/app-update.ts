@@ -8,7 +8,7 @@ function versionUrl() {
   return `${import.meta.env.BASE_URL}version.json?t=${Date.now()}`
 }
 
-async function checkForNewBuild() {
+export async function checkForNewBuild() {
   try {
     const res = await fetch(versionUrl(), { cache: 'no-store' })
     if (!res.ok) return

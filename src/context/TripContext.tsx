@@ -10,6 +10,7 @@ import {
 } from 'react'
 import { generateId } from '@/lib/utils'
 import { fetchTripState, saveTripState, deleteMedia, stripMedia, hydrateMedia } from '@/lib/api'
+import { checkForNewBuild } from '@/lib/app-update'
 import type {
   Activity,
   Expense,
@@ -69,6 +70,7 @@ interface TripContextValue {
   deleteTask: (id: string) => void
   addGalleryImages: (images: Omit<GalleryImage, 'id'>[]) => void
   deleteGalleryImage: (id: string) => void
+  toggleGalleryLike: (id: string, memberId: string) => void
   addMember: (member: Omit<Member, 'id'>) => Member
   updateMember: (id: string, data: Partial<Member>) => void
   deleteMember: (id: string) => void
@@ -76,6 +78,7 @@ interface TripContextValue {
   adjustPayment: (id: string, delta: number) => void
   setPaymentAmount: (id: string, amount: number) => void
   deletePayment: (id: string) => void
+  refresh: () => Promise<boolean>
   totalPaid: number
   totalSpent: number
   remainingBudget: number
@@ -113,39 +116,57 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const applyRemote = useCallback((remote: TripState, force = false) => {
+    if (!force && dirtyRef.current) return
+    const next: TripState = {
+      trip: { ...emptyTrip, ...remote.trip },
+      schedule: remote.schedule || [],
+      activities: remote.activities || [],
+      expenses: remote.expenses || [],
+      tasks: remote.tasks || [],
+      gallery: remote.gallery || [],
+      members: remote.members || [],
+      payments: remote.payments || [],
+    }
+    const same = JSON.stringify(next) === JSON.stringify(stateRef.current)
+    if (same) {
+      setSynced(true)
+      return
+    }
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    skipSave.current = true
+    dirtyRef.current = false
+    setState(next)
+    stateRef.current = next
+    persistLocal(next)
+    setSynced(true)
+  }, [])
+
+  const refresh = useCallback(async () => {
+    try {
+      if (dirtyRef.current) {
+        await saveTripState(stateRef.current)
+        dirtyRef.current = false
+      }
+      const remote = await fetchTripState()
+      applyRemote(remote, true)
+      await navigator.serviceWorker?.getRegistration()?.then((reg) => reg?.update())
+      await checkForNewBuild()
+      return true
+    } catch {
+      setSynced(false)
+      return false
+    }
+  }, [applyRemote])
+
   useEffect(() => {
     let cancelled = false
-
-    function applyRemote(remote: TripState) {
-      if (dirtyRef.current) return
-      const next: TripState = {
-        trip: { ...emptyTrip, ...remote.trip },
-        schedule: remote.schedule || [],
-        activities: remote.activities || [],
-        expenses: remote.expenses || [],
-        tasks: remote.tasks || [],
-        gallery: remote.gallery || [],
-        members: remote.members || [],
-        payments: remote.payments || [],
-      }
-      const same = JSON.stringify(next) === JSON.stringify(stateRef.current)
-      if (same) {
-        setSynced(true)
-        return
-      }
-      if (saveTimer.current) clearTimeout(saveTimer.current)
-      skipSave.current = true
-      setState(next)
-      stateRef.current = next
-      persistLocal(next)
-      setSynced(true)
-    }
 
     async function init() {
       try {
         const remote = await fetchTripState()
         if (cancelled) return
-        applyRemote(remote)
+        applyRemote(remote, true)
       } catch {
         if (cancelled) return
         setState(await hydrateMedia(loadLocal()))
@@ -175,7 +196,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
       cancelled = true
       clearInterval(poll)
     }
-  }, [])
+  }, [applyRemote])
 
   useEffect(() => {
     if (loading) return
@@ -314,6 +335,23 @@ export function TripProvider({ children }: { children: ReactNode }) {
     }))
   }, [])
 
+  const toggleGalleryLike = useCallback((id: string, memberId: string) => {
+    if (!memberId) return
+    setState((s) => ({
+      ...s,
+      gallery: s.gallery.map((g) => {
+        if (g.id !== id) return g
+        const likedBy = g.likedBy || []
+        return {
+          ...g,
+          likedBy: likedBy.includes(memberId)
+            ? likedBy.filter((m) => m !== memberId)
+            : [...likedBy, memberId],
+        }
+      }),
+    }))
+  }, [])
+
   const addMember = useCallback((member: Omit<Member, 'id'>) => {
     const next: Member = { ...member, id: generateId() }
     setState((s) => ({ ...s, members: [...s.members, next] }))
@@ -418,6 +456,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     deleteTask,
     addGalleryImages,
     deleteGalleryImage,
+    toggleGalleryLike,
     addMember,
     updateMember,
     deleteMember,
@@ -425,6 +464,7 @@ export function TripProvider({ children }: { children: ReactNode }) {
     adjustPayment,
     setPaymentAmount,
     deletePayment,
+    refresh,
     totalSpent,
     totalPaid,
     remainingBudget,

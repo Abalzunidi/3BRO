@@ -50,7 +50,14 @@ export function stripMedia(state: TripState): TripState {
   const n = normalize(state)
   return {
     ...n,
-    gallery: n.gallery.map(({ id, name, createdAt }) => ({ id, name, createdAt, url: '' })),
+    gallery: n.gallery.map(({ id, name, createdAt, caption, likedBy }) => ({
+      id,
+      name,
+      createdAt,
+      ...(caption ? { caption } : {}),
+      ...(likedBy?.length ? { likedBy } : {}),
+      url: '',
+    })),
     activities: n.activities.map((a) => ({
       ...a,
       image: a.image?.startsWith('data:') ? '' : a.image,
